@@ -9,7 +9,6 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
-    <!-- Bibliotecas para Geração de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -44,10 +43,9 @@
             outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 1px var(--primary-color);
         }
         .form-field textarea { 
-            resize: none; /* Desabilita o redimensionamento manual */
-            overflow-y: hidden; /* Esconde a barra de rolagem para o auto-resize funcionar */
+            resize: none;
+            overflow-y: hidden;
         }
-        
         .admissao-field {
             display: flex;
             flex-direction: column;
@@ -60,7 +58,6 @@
         .admissao-field textarea {
             min-height: 220px;
         }
-
         .col-span-2 { grid-column: span 2 / span 2; }
         .col-span-3 { grid-column: span 3 / span 3; }
         .col-span-4 { grid-column: span 4 / span 4; }
@@ -68,7 +65,6 @@
         .col-span-6 { grid-column: span 6 / span 6; }
         .col-span-8 { grid-column: span 8 / span 8; }
         .col-span-12 { grid-column: span 12 / span 12; }
-
         .tab-button {
             padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;
             border-bottom: 3px solid transparent; transition: all 0.3s ease;
@@ -149,7 +145,6 @@
         </main>
     </div>
 
-    <!-- Modals -->
     <div id="modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full no-print hidden z-50">
         <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
@@ -193,7 +188,6 @@
         </div>
     </div>
 
-    <!-- Templates -->
     <template id="admissao-template">
         <div class="form-section">
             <header class="text-center mb-8 flex justify-between items-center">
@@ -205,7 +199,7 @@
                 <div class="flex items-center space-x-2 no-print">
                     <button class="print-pdf-btn text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50" title="Salvar PDF e Imprimir">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                     </button>
                 </div>
@@ -252,7 +246,7 @@
                  <div class="flex items-center space-x-2 no-print">
                     <button class="print-pdf-btn text-blue-600 hover:text-blue-800 p-1.5 rounded-full hover:bg-blue-50" title="Salvar PDF e Imprimir">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                     </button>
                     <button class="remove-btn text-red-500 hover:text-red-700 p-1.5 rounded-full hover:bg-red-50" title="Remover este dia">
@@ -265,21 +259,17 @@
                 <div class="form-field col-span-4 sm:col-span-2"><label>DATA</label><input type="date" class="record-date daily-field" data-field="date"></div>
                 <div class="form-field col-span-8 sm:col-span-5"><label>COMORBIDADES</label><input type="text" class="comorbidades" readonly></div>
                 
-                <!-- Linha Diagnósticos -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>DIAGNÓSTICO PRIMÁRIO</label><textarea class="daily-field" data-field="diagPrimario" style="min-height: 150px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-8"><label>DIAGNÓSTICO SECUNDÁRIO</label><textarea class="daily-field" data-field="diagSecundario" style="min-height: 150px;"></textarea></div>
 
-                <!-- Linha Invasivos, ATB, Culturas -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>INVASIVOS</label><textarea class="daily-field" data-field="invasivos" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>ATB</label><textarea class="daily-field" data-field="atb" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>CULTURAS</label><textarea class="daily-field" data-field="culturas" style="min-height: 100px;"></textarea></div>
 
-                <!-- Linha Gasometria, VM, Especialista -->
                 <div class="form-field col-span-12 sm:col-span-6"><label>GASOMETRIAS</label><textarea class="daily-field" data-field="gasometrias" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>VM/O2 SUPLEMENTAR</label><textarea class="daily-field" data-field="vmO2" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>ESPECIALISTA</label><textarea class="daily-field" data-field="especialista" style="min-height: 100px;"></textarea></div>
                 
-                <!-- Linha Evoluções -->
                 <div class="form-field col-span-12 sm:col-span-6">
                     <div class="flex justify-between items-center mb-1">
                         <label>DIURNO - EVOLUÇÃO</label>
@@ -295,19 +285,16 @@
                     <textarea class="daily-field" data-field="evoNoturno" style="min-height: 150px;"></textarea>
                 </div>
 
-                <!-- Linha Nutrição, Glicemias, Febre, Transfusões -->
                 <div class="form-field col-span-12 sm:col-span-3"><label>NUTRIÇÃO</label><textarea class="daily-field" data-field="nutricao" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>GLICEMIAS</label><textarea class="daily-field" data-field="glicemias" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>FEBRE</label><textarea class="daily-field" data-field="febre" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>TRANSFUSÕES</label><textarea class="daily-field" data-field="transfusoes" style="min-height: 100px;"></textarea></div>
 
-                <!-- Linha Diurese, Balanço, Evacuações, Drenos -->
                 <div class="form-field col-span-12 sm:col-span-3"><label>DIURESE</label><textarea class="daily-field" data-field="diurese" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>BALANÇO HÍDRICO</label><textarea class="daily-field" data-field="balanco" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>EVACUAÇÕES</label><textarea class="daily-field" data-field="evacuacoes" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>DRENOS</label><textarea class="daily-field" data-field="drenos" style="min-height: 100px;"></textarea></div>
 
-                <!-- Linha Final -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>MEDICAMENTOS</label><textarea class="daily-field" data-field="medicamentos" style="min-height: 200px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>EXAMES DO DIA / RELEVANTES</label><textarea class="daily-field" data-field="exames" style="min-height: 200px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>CONDUTA</label><textarea class="daily-field" data-field="conduta" style="min-height: 200px;"></textarea></div>
@@ -315,10 +302,15 @@
         </div>
     </template>
 
-    <!-- Script Principal -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- VARIÁVEIS GLOBAIS ---
+            // --- NOVO: LER PARÂMETROS DA URL ---
+            const params = new URLSearchParams(window.location.search);
+            const boxId = params.get('box'); // Pega o valor de 'box' da URL (ex: "01", "02")
+
+            // --- NOVO: CRIAR UMA CHAVE DE ARMAZENAMENTO DINÂMICA ---
+            const storageKey = boxId ? `passometroAppData_${boxId}` : 'passometroAppData_default';
+            
             let appData = null;
             let modalAction = null;
             let debounceTimer;
@@ -327,7 +319,7 @@
             function getEmptyData() {
                 return {
                     admissao: {
-                        nome: '', idade: '', dataAdmissao: '', box: '',
+                        nome: '', idade: '', dataAdmissao: '', box: boxId ? `BOX-${boxId}` : '', // NOVO: Preenche o box automaticamente
                         historia: '', tratamentoPrevio: '', comorbidades: '',
                         examesRelevantes: '', medicamentosContinuo: '', condutaInicial: ''
                     },
@@ -338,14 +330,14 @@
             // --- GERENCIAMENTO DE ESTADO (LOCALSTORAGE) ---
             function saveState() {
                 if (appData) {
-                    localStorage.setItem('passometroAppData', JSON.stringify(appData));
+                    localStorage.setItem(storageKey, JSON.stringify(appData));
                 } else {
-                    localStorage.removeItem('passometroAppData');
+                    localStorage.removeItem(storageKey);
                 }
             }
 
             function loadState() {
-                const savedData = localStorage.getItem('passometroAppData');
+                const savedData = localStorage.getItem(storageKey);
                 appData = savedData ? JSON.parse(savedData) : null;
             }
 
@@ -895,6 +887,11 @@
                 document.getElementById('tab-btn-passometro').addEventListener('click', () => switchTab('passometro'));
                 document.getElementById('btn-add-day').addEventListener('click', () => _addDailyRecord(null, true));
                 
+                // NOVO: Personaliza o título com o ID do Box
+                if (boxId) {
+                    document.getElementById('header-title').textContent = `Passômetro CTI - BOX ${boxId}`;
+                }
+
                 loadState();
                 render();
             }
