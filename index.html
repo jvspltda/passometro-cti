@@ -9,6 +9,11 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     
+    <!-- SDKs do Firebase -->
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
+
+    <!-- Bibliotecas para Geração de PDF -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 
@@ -30,22 +35,23 @@
         .form-grid {
             display: grid;
             grid-template-columns: repeat(12, 1fr);
-            gap: 1rem;
+            gap: 1.5rem;
         }
         .form-field { display: flex; flex-direction: column; }
         .form-field label { font-size: 0.8rem; font-weight: 600; color: #4a5568; margin-bottom: 0.25rem; }
-        .form-field input, .form-field textarea {
+        .form-field input, .form-field textarea, .form-field select {
             border: 1px solid #e2e8f0; border-radius: 0.375rem; padding: 0.5rem 0.75rem;
             font-size: 0.9rem; color: #2d3748; transition: border-color 0.2s;
             line-height: 1.5; 
         }
-        .form-field input:focus, .form-field textarea:focus {
+        .form-field input:focus, .form-field textarea:focus, .form-field select:focus {
             outline: none; border-color: var(--primary-color); box-shadow: 0 0 0 1px var(--primary-color);
         }
         .form-field textarea { 
             resize: none;
             overflow-y: hidden;
         }
+        
         .admissao-field {
             display: flex;
             flex-direction: column;
@@ -58,6 +64,56 @@
         .admissao-field textarea {
             min-height: 220px;
         }
+
+        .checkbox-group label, .radio-group label {
+            font-size: 0.9rem;
+            font-weight: 500;
+            color: #2d3748;
+            display: flex;
+            align-items: center;
+        }
+        .checkbox-group input, .radio-group input {
+            margin-right: 0.5rem;
+            height: 1rem;
+            width: 1rem;
+        }
+        .form-heading {
+            grid-column: 1 / -1;
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--primary-color);
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 0.5rem;
+            margin-top: 1rem;
+            margin-bottom: 0.5rem;
+        }
+        .sub-heading {
+             font-size: 1rem;
+             font-weight: 600;
+             color: #1a202c;
+             margin-bottom: 0.75rem;
+             margin-top: 0.5rem;
+             border-bottom: 1px solid #cbd5e0;
+             padding-bottom: 0.25rem;
+        }
+        
+        .physio-field {
+            border-color: #2d3748;
+        }
+        
+        #evolution-data-container h4 {
+            font-size: 1rem; font-weight: 700; color: var(--primary-color);
+            margin-top: 1rem; margin-bottom: 0.5rem; border-bottom: 2px solid #e2e8f0; padding-bottom: 0.25rem;
+        }
+        #evolution-data-container p, #evolution-data-container pre {
+            font-size: 0.9rem; margin-bottom: 0.5rem; white-space: pre-wrap; word-wrap: break-word;
+            background-color: #f7fafc; padding: 0.5rem; border-radius: 0.25rem; border: 1px solid #e2e8f0;
+        }
+         #evolution-data-container p strong { color: #4a5568; }
+         #generated-evolution-output { margin-top: 1rem; border-top: 2px solid var(--primary-color); padding-top: 1rem; }
+
+
+        .col-span-1 { grid-column: span 1 / span 1; }
         .col-span-2 { grid-column: span 2 / span 2; }
         .col-span-3 { grid-column: span 3 / span 3; }
         .col-span-4 { grid-column: span 4 / span 4; }
@@ -65,6 +121,7 @@
         .col-span-6 { grid-column: span 6 / span 6; }
         .col-span-8 { grid-column: span 8 / span 8; }
         .col-span-12 { grid-column: span 12 / span 12; }
+
         .tab-button {
             padding: 0.75rem 1.5rem; font-weight: 600; cursor: pointer;
             border-bottom: 3px solid transparent; transition: all 0.3s ease;
@@ -73,80 +130,83 @@
         .tab-button:not(.active):hover { background-color: #edf2f7; }
         .tab-content { display: none; }
         .tab-content.active { display: block; }
+
+        #loader {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 300px;
+        }
         
-        #evolution-data-container h4 {
-            font-size: 1rem;
-            font-weight: 700;
-            color: var(--primary-color);
-            margin-top: 1rem;
-            margin-bottom: 0.5rem;
-            border-bottom: 2px solid #e2e8f0;
-            padding-bottom: 0.25rem;
-        }
-        #evolution-data-container p, #evolution-data-container pre {
-            font-size: 0.9rem;
-            margin-bottom: 0.5rem;
-            white-space: pre-wrap;
-            word-wrap: break-word;
-            background-color: #f7fafc;
-            padding: 0.5rem;
-            border-radius: 0.25rem;
-            border: 1px solid #e2e8f0;
-        }
-         #evolution-data-container p strong {
-            color: #4a5568;
-         }
-         #generated-evolution-output {
-            margin-top: 1rem;
-            border-top: 2px solid var(--primary-color);
-            padding-top: 1rem;
-         }
     </style>
 </head>
 <body class="bg-gray-100">
 
-    <div id="main-container" class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
-        <header class="mb-6">
-            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                <div>
-                    <p class="text-lg font-semibold text-gray-600">Fundação Hospitalar São Vicente de Paulo - Capelinha/MG</p>
-                    <h1 id="header-title" class="text-3xl font-bold text-gray-800">Passômetro CTI</h1>
-                    <p id="header-subtitle" class="text-gray-500 mt-1">Nenhum paciente admitido</p>
-                </div>
-            </div>
-        </header>
-        
-        <div id="management-panel" class="form-section mb-6 no-print">
-            <h3 class="text-lg font-bold text-gray-700 mb-4">Gerenciamento do Passômetro</h3>
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <button id="btn-new-passometro" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300">Novo Passômetro</button>
-                <button id="btn-end-passometro" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300">Encerrar e Gerar PDF Completo</button>
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+        <div id="loader">
+            <div class="text-center">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 font-semibold text-gray-600">Carregando dados do box...</p>
             </div>
         </div>
 
-        <div id="tabs-nav" class="border-b border-gray-200 mb-6 no-print hidden">
-            <nav class="flex flex-wrap">
-                <button id="tab-btn-admissao" class="tab-button active">Folha de Admissão</button>
-                <button id="tab-btn-passometro" class="tab-button">Passômetro Diário</button>
-            </nav>
-        </div>
-
-        <main id="printable-area">
-            <div id="tab-content-admissao" class="tab-content"></div>
-            <div id="tab-content-passometro" class="tab-content">
-                <div class="flex justify-end mb-4 no-print">
-                    <button id="btn-add-day" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
-                        Adicionar Novo Dia
-                    </button>
+        <div id="main-container" class="hidden">
+            <header class="mb-6">
+                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
+                    <div>
+                        <p class="text-lg font-semibold text-gray-600">Fundação Hospitalar São Vicente de Paulo - Capelinha/MG</p>
+                        <h1 id="header-title" class="text-3xl font-bold text-gray-800">Passômetro CTI</h1>
+                        <p id="header-subtitle" class="text-gray-500 mt-1">Nenhum paciente admitido</p>
+                    </div>
                 </div>
-                <div id="daily-records-container" class="space-y-6"></div>
+            </header>
+            
+            <div id="empty-box-message" class="hidden form-section text-center">
+                <h3 class="text-xl font-bold text-gray-700">Box Vazio</h3>
+                <p class="text-gray-600 my-4">Este box está livre. Para admitir um novo paciente, clique no botão abaixo.</p>
+                <button id="btn-new-passometro-empty" class="bg-green-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-green-700 transition duration-300 inline-flex items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3m0 0v3m0-3h3m-3 0H9m12 0a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                    Admitir Novo Paciente
+                </button>
             </div>
-        </main>
+
+            <div id="patient-content">
+                <div id="management-panel" class="form-section mb-6 no-print">
+                    <h3 class="text-lg font-bold text-gray-700 mb-4">Gerenciamento do Passômetro</h3>
+                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                        <button id="btn-clear-box" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition duration-300">Limpar Box (Alta)</button>
+                        <button id="btn-end-passometro" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300">Encerrar e Gerar PDF Completo</button>
+                    </div>
+                </div>
+
+                <div id="tabs-nav" class="border-b border-gray-200 mb-6 no-print">
+                    <nav class="flex flex-wrap">
+                        <button id="tab-btn-admissao" class="tab-button active">Folha de Admissão</button>
+                        <button id="tab-btn-dados-clinicos" class="tab-button">Dados Clínicos</button>
+                        <button id="tab-btn-passometro" class="tab-button">Passômetro Diário</button>
+                    </nav>
+                </div>
+
+                <main id="printable-area">
+                    <div id="tab-content-admissao" class="tab-content"></div>
+                    <div id="tab-content-dados-clinicos" class="tab-content"></div>
+                    <div id="tab-content-passometro" class="tab-content">
+                        <div class="flex justify-end mb-4 no-print">
+                            <button id="btn-add-day" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M10 3a1 1 0 011 1v5h5a1 1 0 110 2h-5v5a1 1 0 11-2 0v-5H4a1 1 0 110-2h5V4a1 1 0 011-1z" clip-rule="evenodd" /></svg>
+                                Adicionar Novo Dia
+                            </button>
+                        </div>
+                        <div id="daily-records-container" class="space-y-6"></div>
+                    </div>
+                </main>
+            </div>
+        </div>
     </div>
 
+    <!-- Modals -->
     <div id="modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full no-print hidden z-50">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+       <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
             <div class="mt-3 text-center">
                 <div id="modal-icon" class="mx-auto flex items-center justify-center h-12 w-12 rounded-full bg-gray-100"></div>
                 <h3 id="modal-title" class="text-lg leading-6 font-medium text-gray-900 mt-2"></h3>
@@ -164,6 +224,7 @@
             </div>
         </div>
     </div>
+
     <div id="evolution-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full no-print hidden z-50">
         <div class="relative top-5 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
             <div class="flex justify-between items-center border-b pb-3 mb-4">
@@ -188,8 +249,9 @@
         </div>
     </div>
 
+    <!-- Templates -->
     <template id="admissao-template">
-        <div class="form-section">
+       <div class="form-section">
             <header class="text-center mb-8 flex justify-between items-center">
                 <div>
                     <p class="text-lg font-semibold text-gray-700">Fundação Hospitalar São Vicente de Paulo - Capelinha/MG</p>
@@ -199,7 +261,7 @@
                 <div class="flex items-center space-x-2 no-print">
                     <button class="print-pdf-btn text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50" title="Salvar PDF e Imprimir">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                     </button>
                 </div>
@@ -220,7 +282,7 @@
                     </div>
                      <div class="md:col-span-2 form-field !mb-0">
                         <label class="!border-0 !p-0 !m-0 text-sm font-medium text-gray-700">BOX</label>
-                        <input type="text" data-field="box" class="ad-field mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 leading-normal" placeholder="Ex: BOX-05">
+                        <input type="text" data-field="box" class="ad-field mt-1 block w-full border-gray-300 rounded-md shadow-sm sm:text-sm p-2 leading-normal" placeholder="Ex: BOX-05" readonly>
                     </div>
                 </div>
             </section>
@@ -228,7 +290,7 @@
                 <div>
                     <div class="admissao-field"><label>HISTÓRIA CLÍNICA ATUAL</label><textarea data-field="historia" class="ad-field"></textarea></div>
                     <div class="admissao-field"><label>TRATAMENTO REALIZADO PREVIAMENTE</label><textarea data-field="tratamentoPrevio" class="ad-field"></textarea></div>
-                    <div class="admissao-field"><label>COMORBIDADES</label><textarea data-field="comorbidades" class="ad-field"></textarea></div>
+                    <div class="admissao-field"><label>COMORBIDADES (resumo)</label><textarea data-field="comorbidades" class="ad-field"></textarea></div>
                 </div>
                 <div>
                     <div class="admissao-field"><label>EXAMES RELEVANTES</label><textarea data-field="examesRelevantes" class="ad-field"></textarea></div>
@@ -238,15 +300,178 @@
             </main>
         </div>
     </template>
+    
+    <template id="dados-clinicos-template">
+        <div class="form-section">
+            <header class="text-center mb-8 flex justify-between items-center">
+                <div>
+                    <h1 class="text-2xl font-bold text-gray-800">DADOS CLÍNICOS E ESCORES</h1>
+                    <p class="text-gray-600">Informações complementares da admissão</p>
+                </div>
+                 <div class="flex items-center space-x-2 no-print">
+                    <button class="print-pdf-btn text-blue-600 hover:text-blue-800 p-2 rounded-full hover:bg-blue-50" title="Salvar PDF e Imprimir">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-7 w-7" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" /></svg>
+                    </button>
+                </div>
+            </header>
+            <p id="dados-clinicos-patient-name" class="text-lg font-semibold text-gray-700 mb-6 border-b pb-2"></p>
+            <div class="form-grid">
+                
+                <h3 class="form-heading col-span-12">Comorbidades Detalhadas</h3>
+                <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8">
+                    <div class="space-y-4 radio-group">
+                        <div class="sub-heading">Insuficiência Cardíaca</div>
+                        <label><input type="radio" name="comorb_icc_nyha" value="2-3" class="dc-field">NYHA Classes II-III</label>
+                        <label><input type="radio" name="comorb_icc_nyha" value="4" class="dc-field">NYHA Classe IV</label>
+                    </div>
+                    <div class="space-y-4 radio-group">
+                        <div class="sub-heading">Insuficiência Renal Crônica</div>
+                        <label><input type="radio" name="comorb_irc_dialise" value="sem" class="dc-field">Sem diálise</label>
+                        <label><input type="radio" name="comorb_irc_dialise" value="com" class="dc-field">Em diálise</label>
+                    </div>
+                     <div class="space-y-4 radio-group">
+                        <div class="sub-heading">Cirrose (Child-Pugh)</div>
+                        <label><input type="radio" name="comorb_cirrose_child" value="a-b" class="dc-field">Child A-B</label>
+                        <label><input type="radio" name="comorb_cirrose_child" value="c" class="dc-field">Child C</label>
+                    </div>
+                </div>
+                
+                 <div class="col-span-12 grid grid-cols-1 md:grid-cols-3 gap-8 mt-4 checkbox-group">
+                    <div>
+                        <div class="sub-heading">Cardiovascular</div>
+                        <div class="space-y-2">
+                             <div><label><input type="checkbox" data-field="comorb_angina" class="dc-field"> Angina</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_has" class="dc-field"> Hipertensão Arterial</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_tvp" class="dc-field"> Trombose venosa profunda</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_dap" class="dc-field"> Doença arterial periférica</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_iam" class="dc-field"> IAM prévio</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_fa" class="dc-field"> Fibrilação atrial crônica</label></div>
+                             <div><label><input type="checkbox" data-field="comorb_arritmias" class="dc-field"> Outras arritmias cardíacas</label></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="sub-heading">Neurológicas e Psiquiátricas</div>
+                        <div class="space-y-2">
+                            <div><label><input type="checkbox" data-field="comorb_alcoolismo" class="dc-field"> Alcoolismo</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_demencia" class="dc-field"> Demência</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_drogas" class="dc-field"> Dependência de subst. psicoativas</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_avc_sequela" class="dc-field"> AVC com sequela</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_avc_sem_sequela" class="dc-field"> AVC sem sequela</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_psiquiatrica" class="dc-field"> Doença psiquiátrica</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_tabagismo" class="dc-field"> Tabagismo (nos últimos 12m)</label></div>
+                        </div>
+                    </div>
+                    <div>
+                        <div class="sub-heading">Endócrinas, Metabólicas e Outras</div>
+                        <div class="space-y-2">
+                            <div><label><input type="checkbox" data-field="comorb_desnutricao" class="dc-field"> Desnutrição</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_reumatica" class="dc-field"> Doenças reumáticas</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_hipertireoidismo" class="dc-field"> Hipertireoidismo</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_dm_complic" class="dc-field"> Diabetes c/ complicações</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_dm_sem_complic" class="dc-field"> Diabetes s/ complicações</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_obesidade" class="dc-field"> Obesidade mórbida</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_dislipidemia" class="dc-field"> Dislipidemias</label></div>
+                            <div><label><input type="checkbox" data-field="comorb_hipotireoidismo" class="dc-field"> Hipotireoidismo</label></div>
+                        </div>
+                    </div>
+                </div>
+
+                <h3 class="form-heading col-span-12">Eventos Agudos na Internação</h3>
+                <div class="col-span-12 md:col-span-6 border-r pr-4 checkbox-group">
+                    <strong class="text-gray-700 mb-2 block">À internação na unidade (+/- 1h)</strong>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div><label><input type="checkbox" data-field="evento_1h_aminas" class="dc-field"> Aminas vasoativas > 1h</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_vm" class="dc-field"> Ventilação Mecânica</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_vni" class="dc-field"> Ventilação não-invasiva</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_suporte_renal" class="dc-field"> Suporte renal</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_ira" class="dc-field"> Insuficiência respiratória aguda</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_arritmia" class="dc-field"> Arritmia cardíaca</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_insuf_renal" class="dc-field"> Insuficiência renal aguda</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_massa_ic" class="dc-field"> Efeito massa intracraniano</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_neutropenia" class="dc-field"> Neutropenia</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_pcr" class="dc-field"> Parada cardiorrespiratória</label></div>
+                        <div><label><input type="checkbox" data-field="evento_1h_hemorragia" class="dc-field"> Hemorragia digestiva</label></div>
+                    </div>
+                </div>
+                <div class="col-span-12 md:col-span-6 checkbox-group">
+                    <strong class="text-gray-700 mb-2 block">Durante as primeiras 24h de internação</strong>
+                     <div class="grid grid-cols-2 gap-2">
+                        <div><label><input type="checkbox" data-field="evento_24h_aminas" class="dc-field"> Aminas vasoativas > 1h</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_vm" class="dc-field"> Ventilação Mecânica</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_vni" class="dc-field"> Ventilação não-invasiva</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_suporte_renal" class="dc-field"> Suporte renal</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_ira" class="dc-field"> Insuficiência respiratória aguda</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_arritmia" class="dc-field"> Arritmia cardíaca</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_insuf_renal" class="dc-field"> Insuficiência renal aguda</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_massa_ic" class="dc-field"> Efeito massa intracraniano</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_neutropenia" class="dc-field"> Neutropenia</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_pcr" class="dc-field"> Parada cardiorrespiratória</label></div>
+                        <div><label><input type="checkbox" data-field="evento_24h_hemorragia" class="dc-field"> Hemorragia digestiva</label></div>
+                    </div>
+                </div>
+
+                <h3 class="form-heading col-span-12">Dados Fisiológicos e Laboratoriais (Pior resultado à admissão +/- 1h)</h3>
+                <div class="col-span-12 md:col-span-6 border-r pr-4">
+                     <strong class="text-gray-700 mb-2 block">Dados Fisiológicos</strong>
+                     <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <label>Pressão arterial (mmHg)</label><input type="text" data-field="fisio_pa" class="dc-field physio-field">
+                        <label>Pressão arterial média (mmHg)</label><input type="number" data-field="fisio_pam" class="dc-field physio-field">
+                        <label>Frequência cardíaca (bpm)</label><input type="number" data-field="fisio_fc" class="dc-field physio-field">
+                        <label>Frequência respiratória (irpm)</label><input type="number" data-field="fisio_fr" class="dc-field physio-field">
+                        <label>Temperatura (°C)</label><input type="number" step="0.1" data-field="fisio_temp" class="dc-field physio-field">
+                        <label>Escala de Coma (Glasgow)</label><input type="number" data-field="fisio_glasgow" class="dc-field physio-field">
+                     </div>
+                </div>
+                <div class="col-span-12 md:col-span-6">
+                    <strong class="text-gray-700 mb-2 block">Dados Laboratoriais</strong>
+                     <div class="grid grid-cols-2 gap-x-4 gap-y-2">
+                        <label>Leucócitos (x10³/mm³)</label><input type="number" step="0.1" data-field="lab_leuco" class="dc-field">
+                        <label>Plaquetas (x10³/mm³)</label><input type="number" data-field="lab_plaquetas" class="dc-field">
+                        <label>Creatinina (mg/dL)</label><input type="number" step="0.1" data-field="lab_creatinina" class="dc-field">
+                        <label>Ureia (mg/dL)</label><input type="number" data-field="lab_ureia" class="dc-field">
+                        <label>Bilirrubinas totais (mg/dL)</label><input type="number" step="0.1" data-field="lab_bilirrubina" class="dc-field">
+                        <label>pH</label><input type="number" step="0.01" data-field="lab_ph" class="dc-field">
+                        <label>PaO₂ (mmHg)</label><input type="number" data-field="lab_pao2" class="dc-field">
+                        <label>PaCO₂ (mmHg)</label><input type="number" data-field="lab_paco2" class="dc-field">
+                        <label>Lactato arterial (mmol/L)</label><input type="number" step="0.1" data-field="lab_lactato" class="dc-field">
+                     </div>
+                </div>
+
+                 <h3 class="form-heading col-span-12">Priorização e Cuidados Paliativos</h3>
+                 <div class="form-field col-span-12 md:col-span-6">
+                    <label>Prioridade de internação (Resolução CFM 2.156/2016)</label>
+                    <select class="dc-field" data-field="prioridade_cfm">
+                        <option value="">Não avaliado</option>
+                        <option value="p1">Prioridade 1: Paciente crítico com alta probabilidade de recuperação</option>
+                        <option value="p2">Prioridade 2: Paciente com alto risco, necessita de monitoramento intensivo</option>
+                        <option value="p3">Prioridade 3: Paciente crítico com baixa probabilidade de recuperação</option>
+                        <option value="p4">Prioridade 4: Paciente com doença crônica agudizada, benefício da UTI é baixo</option>
+                        <option value="p5">Prioridade 5: Paciente em fase terminal, sem possibilidade de recuperação</option>
+                    </select>
+                 </div>
+                 <div class="form-field col-span-12 md:col-span-6 radio-group">
+                    <label>Decisão para limitar/retirar terapias?</label>
+                    <div class="mt-2 space-y-2">
+                        <label><input type="radio" name="cuidadosPaliativos" value="nao" class="dc-field">Não</label>
+                        <label><input type="radio" name="cuidadosPaliativos" value="onr" class="dc-field">Sim, ordem de não ressuscitação (ONR)</label>
+                        <label><input type="radio" name="cuidadosPaliativos" value="ni" class="dc-field">Sim, não intensificar</label>
+                        <label><input type="radio" name="cuidadosPaliativos" value="limitar" class="dc-field">Sim, limitar</label>
+                        <label><input type="radio" name="cuidadosPaliativos" value="retirar" class="dc-field">Sim, retirar</label>
+                    </div>
+                 </div>
+
+            </div>
+        </div>
+    </template>
 
     <template id="daily-record-template">
-        <div class="form-section daily-record">
+       <div class="form-section daily-record">
             <div class="flex justify-between items-center border-b pb-2 mb-6">
                  <h2 class="text-xl font-bold text-gray-700">Passômetro - Dia <span class="record-date-display"></span></h2>
                  <div class="flex items-center space-x-2 no-print">
                     <button class="print-pdf-btn text-blue-600 hover:text-blue-800 p-1.5 rounded-full hover:bg-blue-50" title="Salvar PDF e Imprimir">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
+                          <path stroke-linecap="round" stroke-linejoin="round" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z" />
                         </svg>
                     </button>
                     <button class="remove-btn text-red-500 hover:text-red-700 p-1.5 rounded-full hover:bg-red-50" title="Remover este dia">
@@ -259,21 +484,25 @@
                 <div class="form-field col-span-4 sm:col-span-2"><label>DATA</label><input type="date" class="record-date daily-field" data-field="date"></div>
                 <div class="form-field col-span-8 sm:col-span-5"><label>COMORBIDADES</label><input type="text" class="comorbidades" readonly></div>
                 
+                <!-- Linha Diagnósticos -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>DIAGNÓSTICO PRIMÁRIO</label><textarea class="daily-field" data-field="diagPrimario" style="min-height: 150px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-8"><label>DIAGNÓSTICO SECUNDÁRIO</label><textarea class="daily-field" data-field="diagSecundario" style="min-height: 150px;"></textarea></div>
 
+                <!-- Linha Invasivos, ATB, Culturas -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>INVASIVOS</label><textarea class="daily-field" data-field="invasivos" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>ATB</label><textarea class="daily-field" data-field="atb" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>CULTURAS</label><textarea class="daily-field" data-field="culturas" style="min-height: 100px;"></textarea></div>
 
+                <!-- Linha Gasometria, VM, Especialista -->
                 <div class="form-field col-span-12 sm:col-span-6"><label>GASOMETRIAS</label><textarea class="daily-field" data-field="gasometrias" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>VM/O2 SUPLEMENTAR</label><textarea class="daily-field" data-field="vmO2" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>ESPECIALISTA</label><textarea class="daily-field" data-field="especialista" style="min-height: 100px;"></textarea></div>
                 
+                <!-- Linha Evoluções -->
                 <div class="form-field col-span-12 sm:col-span-6">
                     <div class="flex justify-between items-center mb-1">
                         <label>DIURNO - EVOLUÇÃO</label>
-                        <button class="generate-evo-btn text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md hover:bg-blue-200 no-print" data-target="evoDiurno">Gerar Evolução (IA)</button>
+                         <button class="generate-evo-btn text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md hover:bg-blue-200 no-print" data-target="evoDiurno">Gerar Evolução (IA)</button>
                     </div>
                     <textarea class="daily-field" data-field="evoDiurno" style="min-height: 150px;"></textarea>
                 </div>
@@ -285,264 +514,251 @@
                     <textarea class="daily-field" data-field="evoNoturno" style="min-height: 150px;"></textarea>
                 </div>
 
+                <!-- Linha Nutrição, Glicemias, Febre, Transfusões -->
                 <div class="form-field col-span-12 sm:col-span-3"><label>NUTRIÇÃO</label><textarea class="daily-field" data-field="nutricao" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>GLICEMIAS</label><textarea class="daily-field" data-field="glicemias" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>FEBRE</label><textarea class="daily-field" data-field="febre" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>TRANSFUSÕES</label><textarea class="daily-field" data-field="transfusoes" style="min-height: 100px;"></textarea></div>
 
+                <!-- Linha Diurese, Balanço, Evacuações, Drenos -->
                 <div class="form-field col-span-12 sm:col-span-3"><label>DIURESE</label><textarea class="daily-field" data-field="diurese" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>BALANÇO HÍDRICO</label><textarea class="daily-field" data-field="balanco" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>EVACUAÇÕES</label><textarea class="daily-field" data-field="evacuacoes" style="min-height: 100px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-3"><label>DRENOS</label><textarea class="daily-field" data-field="drenos" style="min-height: 100px;"></textarea></div>
 
+                <!-- Linha Final -->
                 <div class="form-field col-span-12 sm:col-span-4"><label>MEDICAMENTOS</label><textarea class="daily-field" data-field="medicamentos" style="min-height: 200px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>EXAMES DO DIA / RELEVANTES</label><textarea class="daily-field" data-field="exames" style="min-height: 200px;"></textarea></div>
                 <div class="form-field col-span-12 sm:col-span-4"><label>CONDUTA</label><textarea class="daily-field" data-field="conduta" style="min-height: 200px;"></textarea></div>
             </div>
         </div>
     </template>
-
+    
+    <!-- Script Principal -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- NOVO: LER PARÂMETROS DA URL ---
-            const params = new URLSearchParams(window.location.search);
-            const boxId = params.get('box'); // Pega o valor de 'box' da URL (ex: "01", "02")
-
-            // --- NOVO: CRIAR UMA CHAVE DE ARMAZENAMENTO DINÂMICA ---
-            const storageKey = boxId ? `passometroAppData_${boxId}` : 'passometroAppData_default';
-            
+            // --- VARIÁVEIS GLOBAIS ---
             let appData = null;
+            let currentBoxId = null;
+            let db = null;
+            let firestoreUnsubscribe = null;
             let modalAction = null;
             let debounceTimer;
 
+            // --- CONFIGURAÇÃO DO FIREBASE ---
+            // ============================================================================================
+            // !! AÇÃO NECESSÁRIA !!
+            // O ERRO DE CONEXÃO COM O FIREBASE ACONTECE PORQUE AS CREDENCIAIS ABAIXO SÃO APENAS UM EXEMPLO.
+            // VOCÊ PRECISA SUBSTITUIR TODO ESTE BLOCO 'firebaseConfig' PELO CÓDIGO FORNECIDO
+            // NO CONSOLE DO SEU PROJETO FIREBASE.
+            //
+            // 1. Acesse o console do Firebase (https://console.firebase.google.com/)
+            // 2. Abra seu projeto.
+            // 3. Clique no ícone de engrenagem (Configurações do projeto).
+            // 4. Na aba "Geral", role para baixo até "Seus apps".
+            // 5. Encontre seu aplicativo da Web e clique em "Configuração" (ou no ícone </>).
+            // 6. Copie o objeto 'const firebaseConfig = { ... };' e cole-o aqui, substituindo o bloco abaixo.
+            // ============================================================================================
+            const firebaseConfig = {
+                apiKey: "SUA_API_KEY",
+                authDomain: "SEU_AUTH_DOMAIN",
+                projectId: "SEU_PROJECT_ID",
+                storageBucket: "SEU_STORAGE_BUCKET",
+                messagingSenderId: "SEU_MESSAGING_SENDER_ID",
+                appId: "SUA_APP_ID"
+            };
+
             // --- ESTRUTURA DE DADOS ---
             function getEmptyData() {
+                const today = new Date().toISOString().split('T')[0];
                 return {
                     admissao: {
-                        nome: '', idade: '', dataAdmissao: '', box: boxId ? `BOX-${boxId}` : '', // NOVO: Preenche o box automaticamente
+                        nome: '', idade: '', dataAdmissao: today, box: currentBoxId,
                         historia: '', tratamentoPrevio: '', comorbidades: '',
                         examesRelevantes: '', medicamentosContinuo: '', condutaInicial: ''
                     },
+                    dadosClinicos: {},
                     passometros: []
                 };
             }
 
-            // --- GERENCIAMENTO DE ESTADO (LOCALSTORAGE) ---
-            function saveState() {
-                if (appData) {
-                    localStorage.setItem(storageKey, JSON.stringify(appData));
-                } else {
-                    localStorage.removeItem(storageKey);
+            // --- GERENCIAMENTO DE ESTADO (FIRESTORE) ---
+            function updateFirestoreData() {
+                if (db && currentBoxId && appData) {
+                    const cleanData = JSON.parse(JSON.stringify(appData));
+                    db.collection('passometros').doc(currentBoxId).set(cleanData)
+                        .catch(error => console.error("Erro ao salvar dados: ", error));
                 }
             }
 
-            function loadState() {
-                const savedData = localStorage.getItem(storageKey);
-                appData = savedData ? JSON.parse(savedData) : null;
+            function debounceUpdateFirestore() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(updateFirestoreData, 800);
             }
 
-            function debounceSaveState() {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(saveState, 500);
+            function listenToBoxData(boxId) {
+                if (firestoreUnsubscribe) firestoreUnsubscribe();
+                const docRef = db.collection('passometros').doc(boxId);
+                firestoreUnsubscribe = docRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        appData = doc.data();
+                        if (!appData.passometros) appData.passometros = [];
+                        if (!appData.dadosClinicos) appData.dadosClinicos = {};
+                    } else {
+                        appData = null; 
+                    }
+                    render();
+                    hideLoader();
+                }, error => {
+                    console.error("Erro ao escutar dados: ", error);
+                    alert("Não foi possível conectar ao banco de dados.");
+                    hideLoader();
+                });
             }
-            
+
             // --- LÓGICA DA INTERFACE (UI) ---
+            function showLoader() { document.getElementById('loader').style.display = 'flex'; document.getElementById('main-container').classList.add('hidden'); }
+            function hideLoader() { document.getElementById('loader').style.display = 'none'; document.getElementById('main-container').classList.remove('hidden'); }
+
             function switchTab(tabName) {
                 document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
                 document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                document.getElementById(`tab-btn-${tabName}`).classList.add('active');
-                const contentTab = document.getElementById(`tab-content-${tabName}`);
-                if (contentTab) contentTab.classList.add('active');
+                const button = document.getElementById(`tab-btn-${tabName}`);
+                const content = document.getElementById(`tab-content-${tabName}`);
+                if(button) button.classList.add('active');
+                if(content) content.classList.add('active');
             }
             
             function updateHeader() {
+                const boxTitle = currentBoxId ? ` - ${currentBoxId.replace('-', ' ')}` : '';
+                document.getElementById('header-title').textContent = `Passômetro CTI${boxTitle}`;
                 const nome = appData && appData.admissao ? appData.admissao.nome : '';
                 document.getElementById('header-subtitle').textContent = nome ? `Paciente: ${nome}` : 'Nenhum paciente admitido';
+                const dcPatientName = document.getElementById('dados-clinicos-patient-name');
+                if(dcPatientName) dcPatientName.textContent = 'Paciente: ' + (nome || 'Não informado');
             }
 
             function render() {
                 if (appData === null) {
-                    document.getElementById('tabs-nav').classList.add('hidden');
-                    document.getElementById('tab-content-admissao').innerHTML = '';
-                    document.getElementById('tab-content-passometro').style.display = 'none';
-                    document.getElementById('management-panel').style.display = 'grid';
-                    const endBtn = document.getElementById('btn-end-passometro');
-                    endBtn.disabled = true;
-                    endBtn.classList.add('opacity-50', 'cursor-not-allowed');
-                    updateHeader();
-                    return;
+                    document.getElementById('empty-box-message').classList.remove('hidden');
+                    document.getElementById('patient-content').classList.add('hidden');
+                } else {
+                    document.getElementById('empty-box-message').classList.add('hidden');
+                    document.getElementById('patient-content').classList.remove('hidden');
+
+                    const activeTabButton = document.querySelector('#tabs-nav .tab-button.active');
+                    const activeTabId = activeTabButton ? activeTabButton.id.replace('tab-btn-', '') : 'admissao';
+
+                    const admissaoContainer = document.getElementById('tab-content-admissao');
+                    admissaoContainer.innerHTML = '';
+                    const admissaoTemplate = document.getElementById('admissao-template').content.cloneNode(true);
+                    admissaoContainer.appendChild(admissaoTemplate);
+                    Object.keys(appData.admissao).forEach(field => {
+                        const input = admissaoContainer.querySelector(`.ad-field[data-field="${field}"]`);
+                        if (input) input.value = appData.admissao[field] || '';
+                    });
+                    admissaoContainer.querySelector('.ad-field[data-field="box"]').value = currentBoxId;
+
+                    const dadosClinicosContainer = document.getElementById('tab-content-dados-clinicos');
+                    dadosClinicosContainer.innerHTML = '';
+                    const dadosClinicosTemplate = document.getElementById('dados-clinicos-template').content.cloneNode(true);
+                    dadosClinicosContainer.appendChild(dadosClinicosTemplate);
+                    if(appData.dadosClinicos) {
+                        dadosClinicosContainer.querySelectorAll('.dc-field').forEach(input => {
+                            const field = input.dataset.field || input.name;
+                            const value = appData.dadosClinicos[field];
+                            if (input.type === 'radio') {
+                                if (input.value === value) input.checked = true;
+                            } else if (input.type === 'checkbox') {
+                                input.checked = !!value;
+                            } else {
+                                input.value = value || '';
+                            }
+                        });
+                    }
+
+                    const dailyContainer = document.getElementById('daily-records-container');
+                    dailyContainer.innerHTML = '';
+                    if (appData.passometros) {
+                        appData.passometros.forEach((record, index) => _addDailyRecordUI(record, index));
+                    }
+                    
+                    switchTab(activeTabId);
                 }
-
-                document.getElementById('tab-content-passometro').style.display = 'block';
-                document.getElementById('tabs-nav').classList.remove('hidden');
-
-                const activeTabButton = document.querySelector('#tabs-nav .tab-button.active');
-                const activeTabId = activeTabButton ? activeTabButton.id.replace('tab-btn-', '') : 'admissao';
-
-                const hasPatientName = appData.admissao.nome && appData.admissao.nome.trim() !== '';
-                const endBtn = document.getElementById("btn-end-passometro");
-                endBtn.disabled = !hasPatientName;
-                endBtn.classList.toggle('opacity-50', !hasPatientName);
-                endBtn.classList.toggle('cursor-not-allowed', !hasPatientName);
-
-                const admissaoContainer = document.getElementById('tab-content-admissao');
-                admissaoContainer.innerHTML = '';
-                const admissaoTemplate = document.getElementById('admissao-template').content.cloneNode(true);
-                admissaoContainer.appendChild(admissaoTemplate);
-
-                Object.keys(appData.admissao).forEach(field => {
-                    const input = admissaoContainer.querySelector(`.ad-field[data-field="${field}"]`);
-                    if (input) input.value = appData.admissao[field] || '';
-                });
-
-                const dailyContainer = document.getElementById('daily-records-container');
-                dailyContainer.innerHTML = '';
-                appData.passometros.forEach((record, index) => {
-                    _addDailyRecord(record, false, index);
-                });
-                
                 updateHeader();
                 addEventListeners();
-                switchTab(activeTabId);
             }
 
             // --- MANIPULAÇÃO DE DADOS ---
-            function _addDailyRecord(initialData = null, isNewEntry = true, index = -1) {
-                let dataToLoad = {};
-                const defaultStructure = 'DIA ANTERIOR: \n12H: \n24H: ';
-                const defaultBalanco = 'ACUMULADO: \nDIA ANTERIOR: \n12H: \n24H: ';
+            function admitNewPatient() {
+                appData = getEmptyData();
+                updateFirestoreData();
+            }
+            
+            function addDailyRecord() {
+                if (!appData.passometros) appData.passometros = [];
+                let newRecord = {};
+                const lastRecord = appData.passometros.length > 0 ? appData.passometros[appData.passometros.length - 1] : null;
 
-                function incrementDayCounters(text) {
-                    if (!text) return '';
-                    return text.replace(/\b(D)(\d+)\b/gi, (match, p1, p2) => {
-                        const dayNumber = parseInt(p2, 10);
-                        return p1 + (dayNumber + 1);
-                    });
-                }
-
-                if (isNewEntry) {
-                    const lastRecord = appData.passometros.length > 0 ? appData.passometros[appData.passometros.length - 1] : null;
-                    
-                    if (lastRecord) {
-                        const get24hValue = (text) => {
-                            if(!text) return 0;
-                            const match = text.match(/24H?:\s*([+-]?\d*\.?\d+)/i);
-                            return match && match[1] ? parseFloat(match[1]) : 0;
-                        };
-                        const getAcumuladoValue = (text) => {
-                            if(!text) return 0;
-                            const match = text.match(/ACUMULADO:\s*([+-]?\d*\.?\d+)/i);
-                            return match && match[1] ? parseFloat(match[1]) : 0;
-                        };
-                        
-                        const lastDate = new Date(lastRecord.date + 'T12:00:00Z');
-                        lastDate.setDate(lastDate.getDate() + 1);
-                        
-                        const oldBalancoText = lastRecord.balanco || '';
-                        const oldAcumulado = getAcumuladoValue(oldBalancoText);
-                        const old24h = get24hValue(oldBalancoText);
-                        const newAcumulado = oldAcumulado + old24h;
-
-                        dataToLoad = {
-                            date: lastDate.toISOString().split('T')[0],
-                            diagPrimario: lastRecord.diagPrimario, diagSecundario: lastRecord.diagSecundario,
-                            invasivos: incrementDayCounters(lastRecord.invasivos), 
-                            vmO2: lastRecord.vmO2, 
-                            atb: incrementDayCounters(lastRecord.atb),
-                            especialista: lastRecord.especialista, nutricao: lastRecord.nutricao,
-                            culturas: lastRecord.culturas, transfusoes: lastRecord.transfusoes,
-                            gasometrias: lastRecord.gasometrias,
-                            medicamentos: lastRecord.medicamentos,
-                            conduta: lastRecord.conduta, drenos: lastRecord.drenos,
-                            glicemias: `DIA ANTERIOR: ${get24hValue(lastRecord.glicemias)}\n12H: \n24H: `,
-                            febre: `DIA ANTERIOR: ${get24hValue(lastRecord.febre)}\n12H: \n24H: `,
-                            diurese: `DIA ANTERIOR: ${get24hValue(lastRecord.diurese)}\n12H: \n24H: `,
-                            balanco: `ACUMULADO: ${newAcumulado.toFixed(0)}\nDIA ANTERIOR: ${old24h.toFixed(0)}\n12H: \n24H: `,
-                            evacuacoes: `DIA ANTERIOR: ${get24hValue(lastRecord.evacuacoes)}\n12H: \n24H: `,
-                        };
-                    } else {
-                        const today = new Date().toISOString().split('T')[0];
-                        dataToLoad = { 
-                            date: appData.admissao.dataAdmissao || today,
-                            glicemias: defaultStructure, febre: defaultStructure,
-                            diurese: defaultStructure, evacuacoes: defaultStructure,
-                            balanco: defaultBalanco, drenos: ''
-                        };
-                    }
-                    appData.passometros.push(dataToLoad);
+                if (lastRecord && lastRecord.date) {
+                    const lastDate = new Date(lastRecord.date + 'T12:00:00Z');
+                    lastDate.setDate(lastDate.getDate() + 1);
+                    newRecord.date = lastDate.toISOString().split('T')[0];
                 } else {
-                    dataToLoad = initialData;
+                    newRecord.date = new Date().toISOString().split('T')[0];
                 }
-                
-                const template = document.getElementById('daily-record-template');
-                const clone = template.content.cloneNode(true);
-                const dailyRecordElement = clone.querySelector('.daily-record');
-                
-                const recordIndex = index !== -1 ? index : appData.passometros.length - 1;
-                dailyRecordElement.dataset.index = recordIndex;
-
-                clone.querySelector('.paciente-nome').value = appData.admissao.nome;
-                clone.querySelector('.comorbidades').value = appData.admissao.comorbidades;
-                
-                const recordDateInput = clone.querySelector('.record-date');
-                const recordDateDisplay = clone.querySelector('.record-date-display');
-                
-                const updateDateDisplay = (dateValue) => {
-                    if (dateValue) {
-                        const date = new Date(dateValue + 'T12:00:00Z');
-                        recordDateDisplay.textContent = date.toLocaleDateString('pt-BR');
-                    } else {
-                        recordDateDisplay.textContent = 'Nova Data';
-                    }
-                };
-
-                recordDateInput.value = dataToLoad.date || '';
-                updateDateDisplay(dataToLoad.date);
-                
-                Object.keys(dataToLoad).forEach(field => {
-                    const input = clone.querySelector(`.daily-field[data-field="${field}"]`);
-                    if (input) input.value = dataToLoad[field] || '';
+                appData.passometros.push(newRecord);
+                updateFirestoreData();
+            }
+            function _addDailyRecordUI(recordData, index) {
+                const template = document.getElementById('daily-record-template').content.cloneNode(true);
+                const dailyRecordElement = template.querySelector('.daily-record');
+                dailyRecordElement.dataset.index = index;
+                template.querySelector('.paciente-nome').value = appData.admissao.nome || '';
+                template.querySelector('.comorbidades').value = appData.admissao.comorbidades || '';
+                const recordDateInput = template.querySelector('.record-date');
+                const recordDateDisplay = template.querySelector('.record-date-display');
+                if(recordData.date) {
+                    recordDateInput.value = recordData.date;
+                    recordDateDisplay.textContent = new Date(recordData.date + 'T12:00:00Z').toLocaleDateString('pt-BR');
+                }
+                Object.keys(recordData).forEach(field => {
+                    const input = template.querySelector(`.daily-field[data-field="${field}"]`);
+                    if(input) input.value = recordData[field] || '';
                 });
-
-                document.getElementById('daily-records-container').appendChild(clone);
-                
-                if (isNewEntry) {
-                    saveState();
-                    render();
-                }
+                document.getElementById('daily-records-container').appendChild(template);
             }
 
             function removeDailyRecord(button) {
                 const recordElement = button.closest('.daily-record');
                 const indexToRemove = parseInt(recordElement.dataset.index, 10);
-
-                if (!isNaN(indexToRemove) && appData && appData.passometros) {
+                if (!isNaN(indexToRemove)) {
                     appData.passometros.splice(indexToRemove, 1);
-                    saveState();
-                    render();
+                    updateFirestoreData();
                 }
             }
-            
             function autoResizeTextarea(textarea) {
-                textarea.style.height = 'auto';
-                textarea.style.height = (textarea.scrollHeight) + 'px';
+                if(textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
+                }
             }
 
             function addEventListeners() {
-                document.querySelectorAll('textarea').forEach(textarea => {
+                document.querySelectorAll('textarea').forEach(textarea => { 
                     textarea.addEventListener('input', () => autoResizeTextarea(textarea));
                     setTimeout(() => autoResizeTextarea(textarea), 0);
                 });
-
-                document.querySelectorAll('.ad-field, .daily-field').forEach(input => {
+                document.querySelectorAll('.ad-field, .daily-field, .dc-field').forEach(input => {
                     input.addEventListener('input', handleFieldInput);
+                    input.addEventListener('change', handleFieldInput);
                 });
-                document.querySelectorAll('.print-pdf-btn').forEach(btn => {
+                document.querySelectorAll('.print-pdf-btn').forEach(btn => { 
                     btn.addEventListener('click', () => downloadAndPrintSection(btn));
                 });
                 document.querySelectorAll('.remove-btn').forEach(btn => {
                     btn.addEventListener('click', () => removeDailyRecord(btn));
-                });
+                 });
                 document.querySelectorAll('.generate-evo-btn').forEach(btn => {
                     btn.addEventListener('click', () => showEvolutionModal(btn));
                 });
@@ -550,42 +766,34 @@
 
             function handleFieldInput(event) {
                 const input = event.target;
-                const field = input.dataset.field;
-                const recordElement = input.closest('.daily-record');
-
+                const field = input.dataset.field || input.name;
+                
                 if (input.classList.contains('ad-field')) {
                     appData.admissao[field] = input.value;
-                    if (field === 'nome') {
-                        updateHeader();
-                        document.querySelectorAll('.paciente-nome').forEach(el => el.value = input.value);
-                        const endBtn = document.getElementById("btn-end-passometro");
-                        const hasPatientName = input.value && input.value.trim() !== '';
-                        endBtn.disabled = !hasPatientName;
-                        endBtn.classList.toggle('opacity-50', !hasPatientName);
-                        endBtn.classList.toggle('cursor-not-allowed', !hasPatientName);
+                    if(field === 'nome') updateHeader();
+                } else if (input.classList.contains('dc-field')) {
+                    if(!appData.dadosClinicos) appData.dadosClinicos = {};
+                     if (input.type === 'radio') {
+                        if(input.checked) appData.dadosClinicos[field] = input.value;
+                    } else if (input.type === 'checkbox') {
+                        appData.dadosClinicos[field] = input.checked;
+                    } else {
+                        appData.dadosClinicos[field] = input.value;
                     }
-                    if (field === 'comorbidades') {
-                        document.querySelectorAll('.comorbidades').forEach(el => el.value = input.value);
-                    }
-                } else if (recordElement && input.classList.contains('daily-field')) {
-                    const recordIndex = recordElement.dataset.index;
+                } else if (input.closest('.daily-record')) {
+                    const recordIndex = input.closest('.daily-record').dataset.index;
                     if (recordIndex !== undefined && appData.passometros[recordIndex]) {
-                        appData.passometros[recordIndex][field] = input.value;
-                        if (field === 'date') {
-                            const dateDisplay = recordElement.querySelector('.record-date-display');
-                            const date = new Date(input.value + 'T12:00:00Z');
-                            dateDisplay.textContent = date.toLocaleDateString('pt-BR');
-                        }
+                        appData.passometros[recordIndex][input.dataset.field] = input.value;
                     }
                 }
-                debounceSaveState();
+                debounceUpdateFirestore();
             }
 
             // --- AÇÕES DE GERENCIAMENTO E PDF ---
-            function createNewPassometro() {
-                appData = getEmptyData();
-                saveState();
-                render();
+            function clearBox() { 
+                if (db && currentBoxId) {
+                    db.collection('passometros').doc(currentBoxId).delete();
+                }
             }
 
             function prepareElementForCanvas(element) {
@@ -594,20 +802,7 @@
                     const pre = document.createElement('pre');
                     pre.textContent = textarea.value;
                     const style = window.getComputedStyle(textarea);
-                    pre.style.cssText = `
-                        font-family: ${style.fontFamily};
-                        font-size: ${style.fontSize};
-                        white-space: pre-wrap;
-                        word-wrap: break-word;
-                        border: ${style.border};
-                        border-radius: ${style.borderRadius};
-                        padding: ${style.padding};
-                        min-height: ${textarea.style.height};
-                        display: block;
-                        color: ${style.color};
-                        background-color: ${style.backgroundColor};
-                        line-height: ${style.lineHeight};
-                    `;
+                    pre.style.cssText = `font-family:${style.fontFamily};font-size:${style.fontSize};white-space:pre-wrap;word-wrap:break-word;border:${style.border};border-radius:${style.borderRadius};padding:${style.padding};min-height:${textarea.style.height};display:block;color:${style.color};background-color:${style.backgroundColor};line-height:${style.lineHeight};`;
                     pre.dataset.isClone = 'true';
                     textarea.style.display = 'none';
                     textarea.parentNode.insertBefore(pre, textarea);
@@ -620,19 +815,16 @@
             }
 
             async function endPassometro() {
-                if (!appData || !appData.admissao.nome) {
-                    hideModal(); return;
-                }
+                if (!appData || !appData.admissao.nome) { hideModal(); return; }
                 showModal('generatingPDF');
                 const { jsPDF } = window.jspdf;
                 const pdf = new jsPDF('p', 'mm', 'a4');
-                const pdfWidth = 210;
-                const pdfMargin = 10;
-                const contentWidth = pdfWidth - (pdfMargin * 2);
                 const allElements = [
                     document.querySelector('#tab-content-admissao .form-section'),
+                    document.querySelector('#tab-content-dados-clinicos .form-section'),
                     ...document.querySelectorAll('#daily-records-container .daily-record')
-                ];
+                ].filter(Boolean);
+
                 try {
                     for (let i = 0; i < allElements.length; i++) {
                         const element = allElements[i];
@@ -641,17 +833,13 @@
                         cleanupElementAfterCanvas(element);
                         const imgData = canvas.toDataURL('image/png');
                         const imgProps = pdf.getImageProperties(imgData);
-                        const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
+                        const imgHeight = (imgProps.height * (210 - 20)) / imgProps.width;
                         if (i > 0) pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', pdfMargin, pdfMargin, contentWidth, imgHeight, undefined, 'FAST');
+                        pdf.addImage(imgData, 'PNG', 10, 10, 210 - 20, imgHeight, undefined, 'FAST');
                     }
                     const pacienteNome = appData.admissao.nome || 'Paciente';
-                    pdf.save(`Passometro_Completo_${pacienteNome.replace(/ /g, '_')}.pdf`);
-                    
-                    appData = null;
-                    saveState();
-                    render();
-
+                    pdf.save(`Passometro_Completo_${pacienteNome.replace(/ /g, '_')}_${currentBoxId}.pdf`);
+                    clearBox();
                 } catch (error) {
                     console.error("Erro ao gerar PDF:", error);
                     allElements.forEach(el => cleanupElementAfterCanvas(el));
@@ -659,104 +847,73 @@
                     hideModal();
                 }
             }
-            
+
             async function downloadAndPrintSection(button) {
                 const sectionToDownload = button.closest('.form-section');
                 if (!sectionToDownload) return;
                 showModal('generatingPDF');
-                const isDailyRecord = sectionToDownload.classList.contains('daily-record');
                 const patientName = (appData.admissao.nome || 'Paciente').replace(/ /g, '_');
                 let fileName;
-                if (isDailyRecord) {
+                 if (sectionToDownload.closest('#tab-content-admissao')) {
+                    fileName = `Folha_Admissao_${patientName}_${currentBoxId}.pdf`;
+                } else if (sectionToDownload.closest('#tab-content-dados-clinicos')) {
+                    fileName = `Dados_Clinicos_${patientName}_${currentBoxId}.pdf`;
+                } else if (sectionToDownload.classList.contains('daily-record')) {
                     const index = sectionToDownload.dataset.index;
-                    const recordData = appData.passometros[index];
-                    const date = recordData.date ? new Date(recordData.date + 'T12:00:00Z').toLocaleDateString('pt-BR').replace(/\//g, '-') : 'sem_data';
-                    fileName = `Passometro_${patientName}_${date}.pdf`;
+                    const date = (appData.passometros[index].date || 'sem-data').replace(/-/g, '_');
+                    fileName = `Passometro_${patientName}_${date}_${currentBoxId}.pdf`;
                 } else {
-                    fileName = `Folha_Admissao_${patientName}.pdf`;
+                    fileName = `Documento_${patientName}_${currentBoxId}.pdf`;
                 }
+
                 try {
                     const { jsPDF } = window.jspdf;
                     const pdf = new jsPDF('p', 'mm', 'a4');
-                    const pdfWidth = 210, pdfMargin = 10, contentWidth = pdfWidth - (pdfMargin * 2);
-                    
                     prepareElementForCanvas(sectionToDownload);
-                    sectionToDownload.style.paddingTop = '20px';
-                    sectionToDownload.style.paddingBottom = '20px';
-
-                    const canvas = await html2canvas(sectionToDownload, { scale: 2.5, useCORS: true, windowHeight: sectionToDownload.scrollHeight, scrollY: -window.scrollY });
-                    
-                    sectionToDownload.style.paddingTop = '';
-                    sectionToDownload.style.paddingBottom = '';
+                    const canvas = await html2canvas(sectionToDownload, { scale: 2.5, useCORS: true });
                     cleanupElementAfterCanvas(sectionToDownload);
-
                     const imgData = canvas.toDataURL('image/png');
                     const imgProps = pdf.getImageProperties(imgData);
-                    const imgHeight = (imgProps.height * contentWidth) / imgProps.width;
-                    pdf.addImage(imgData, 'PNG', pdfMargin, pdfMargin, contentWidth, imgHeight, undefined, 'FAST');
+                    const imgHeight = (imgProps.height * (210 - 20)) / imgProps.width;
+                    pdf.addImage(imgData, 'PNG', 10, 10, 210 - 20, imgHeight, undefined, 'FAST');
                     pdf.save(fileName);
-                    
-                    // Abrir diálogo de impressão
                     pdf.autoPrint();
                     window.open(pdf.output('bloburl'), '_blank');
-
                 } catch (error) {
-                    console.error("Erro ao gerar PDF da seção:", error);
+                    console.error("Erro ao gerar PDF:", error);
                     cleanupElementAfterCanvas(sectionToDownload);
                 } finally {
                     hideModal();
                 }
             }
-            
+
             // --- GERAÇÃO DE EVOLUÇÃO (IA) ---
             function showEvolutionModal(button) {
                 const recordElement = button.closest('.daily-record');
                 const index = parseInt(recordElement.dataset.index, 10);
                 const targetField = button.dataset.target;
                 if (isNaN(index) || !appData.passometros[index]) return;
-                const admissionData = appData.admissao;
+                
                 const dailyData = appData.passometros[index];
                 const modal = document.getElementById('evolution-modal');
                 const container = document.getElementById('evolution-data-container');
                 const outputContainer = document.getElementById('generated-evolution-output');
+                
                 modal.dataset.targetField = targetField;
                 modal.dataset.index = index;
-                const existingEvolutionText = recordElement.querySelector(`textarea[data-field="${targetField}"]`).value;
-                const get24hValue = (text, fieldName) => {
-                    if(!text) return `[${fieldName} não informado]`;
-                    const match = text.match(/24H?:\s*([+-]?\d*\.?\d+)/i);
-                    return match && match[1] ? match[1] : `[Valor 24h não encontrado]`;
-                };
+                
+                const existingEvolutionText = dailyData[targetField] || 'Nenhum registro prévio para este período.';
                 const dateString = dailyData.date ? new Date(dailyData.date + 'T12:00:00Z').toLocaleDateString('pt-BR') : 'Não informada';
+
                 container.innerHTML = `
-                    <p><strong>PACIENTE:</strong> ${admissionData.nome || 'Não informado'}</p>
-                    <p><strong>IDADE:</strong> ${admissionData.idade || 'Não informada'}</p>
+                    <p><strong>PACIENTE:</strong> ${appData.admissao.nome || 'Não informado'}</p>
                     <p><strong>DATA DA EVOLUÇÃO:</strong> ${dateString}</p>
                     <h4>EVOLUÇÃO JÁ REGISTRADA</h4>
-                    <pre>${existingEvolutionText || 'Nenhum registro prévio para este período.'}</pre>
-                    <h4>DIAGNÓSTICOS</h4>
-                    <pre><strong>PRIMÁRIO:</strong>\n${dailyData.diagPrimario || 'Não informado'}</pre>
-                    <pre><strong>SECUNDÁRIOS:</strong>\n${dailyData.diagSecundario || 'Não informado'}</pre>
-                    <h4>DISPOSITIVOS INVASIVOS</h4>
-                    <pre>${dailyData.invasivos || 'Não informado'}</pre>
-                    <h4>ANTIBIOTICOTERAPIA</h4>
-                    <pre>${dailyData.atb || 'Não informado'}</pre>
-                    <h4>DADOS DO DIA</h4>
-                    <p><strong>VM/O2 SUPLEMENTAR:</strong> ${dailyData.vmO2 || 'Não informado'}</p>
-                    <p><strong>NUTRIÇÃO:</strong> ${dailyData.nutricao || 'Não informado'}</p>
-                    <p><strong>DIURESE 24H:</strong> ${get24hValue(dailyData.diurese, 'Diurese')}</p>
-                    <p><strong>BALANÇO HÍDRICO 24H:</strong> ${get24hValue(dailyData.balanco, 'Balanço')}</p>
-                    <p><strong>FEBRE 24H:</strong> ${get24hValue(dailyData.febre, 'Febre')}</p>
-                    <p><strong>EVACUAÇÕES 24H:</strong> ${get24hValue(dailyData.evacuacoes, 'Evacuações')}</p>
-                    <pre><strong>DRENOS:</strong>\n${dailyData.drenos || 'Não informado'}</pre>
-                    <pre><strong>MEDICAMENTOS:</strong>\n${dailyData.medicamentos || 'Não informado'}</pre>
-                    <h4>EXAMES RELEVANTES</h4>
-                    <pre>${dailyData.exames || 'Não informado'}</pre>
-                    <h4>GASOMETRIAS</h4>
-                    <pre>${dailyData.gasometrias || 'Não informado'}</pre>
-                    <h4>PLANO / CONDUTA</h4>
-                    <pre>${dailyData.conduta || 'Não informado'}</pre>
+                    <pre>${existingEvolutionText}</pre>
+                    <h4>DADOS DO PASSÔMETRO DO DIA</h4>
+                    <pre>${Object.entries(dailyData).map(([key, value]) => `<strong>${key.toUpperCase()}:</strong>\n${value || 'Não informado'}`).join('\n\n')}</pre>
                 `;
+                
                 outputContainer.classList.add('hidden');
                 modal.classList.remove('hidden');
             }
@@ -765,18 +922,12 @@
                 const modal = document.getElementById('evolution-modal');
                 const index = parseInt(modal.dataset.index, 10);
                 const targetField = modal.dataset.targetField;
-                const recordElement = document.querySelector(`.daily-record[data-index="${index}"]`);
-                if (isNaN(index) || !targetField || !recordElement) return;
-                const admissionData = appData.admissao;
+                if (isNaN(index) || !targetField) return;
+
                 const dailyData = appData.passometros[index];
-                const existingEvolutionText = recordElement.querySelector(`textarea[data-field="${targetField}"]`).value;
-                
-                let evoText = `EVOLUÇÃO MÉDICA DO DIA (${new Date(dailyData.date + 'T12:00:00Z').toLocaleDateString('pt-BR')}):\n`;
-                if (existingEvolutionText && existingEvolutionText.trim() !== '') {
-                    evoText += `${existingEvolutionText}\n\n`;
-                } else {
-                     evoText += `PACIENTE GRAVE, ${admissionData.idade || ''}, INTERNADO DEVIDO A ${dailyData.diagPrimario || 'diagnóstico primário não informado'}.\n\n`;
-                }
+                const dateString = dailyData.date ? new Date(dailyData.date + 'T12:00:00Z').toLocaleDateString('pt-BR') : 'Não informada';
+                let evoText = `EVOLUÇÃO MÉDICA (${targetField.replace('evo', '').toUpperCase()}) - ${dateString}:\n\n`;
+                evoText += (dailyData[targetField] || `Paciente grave, ${appData.admissao.idade || ''}, internado.`) + "\n\n";
 
                 const fieldsToInclude = [
                     { label: 'DIAGNÓSTICO PRIMÁRIO', value: dailyData.diagPrimario },
@@ -787,16 +938,8 @@
                     { label: 'AVALIAÇÃO DE ESPECIALISTAS', value: dailyData.especialista },
                     { label: 'NUTRIÇÃO', value: dailyData.nutricao },
                     { label: 'MEDICAMENTOS', value: dailyData.medicamentos },
-                    { label: 'TRANSFUSÕES', value: dailyData.transfusoes },
-                    { label: 'CULTURAS', value: dailyData.culturas },
-                    { label: 'DRENOS', value: dailyData.drenos },
-                    { label: 'DIURESE', value: dailyData.diurese },
-                    { label: 'BALANÇO HÍDRICO', value: dailyData.balanco },
-                    { label: 'EVACUAÇÕES', value: dailyData.evacuacoes },
-                    { label: 'FEBRE', value: dailyData.febre },
-                    { label: 'GLICEMIAS', value: dailyData.glicemias },
-                    { label: 'GASOMETRIAS', value: dailyData.gasometrias },
                     { label: 'EXAMES DO DIA / RELEVANTES', value: dailyData.exames },
+                    { label: 'GASOMETRIAS', value: dailyData.gasometrias },
                     { label: 'PLANO / CONDUTA', value: dailyData.conduta }
                 ];
 
@@ -815,30 +958,14 @@
 
             function copyEvolutionText() {
                 const textarea = document.getElementById('generated-evolution-textarea');
-                const copyBtn = document.getElementById('copy-evolution-btn');
                 textarea.select();
-                textarea.setSelectionRange(0, 99999); 
-                try {
-                    const successful = document.execCommand('copy');
-                    const msg = successful ? 'Copiado!' : 'Falha ao copiar!';
-                    const originalText = copyBtn.textContent;
-                    copyBtn.textContent = msg;
-                    copyBtn.classList.toggle('bg-green-600', !successful);
-                    copyBtn.classList.toggle('hover:bg-green-700', !successful);
-                    copyBtn.classList.toggle(successful ? 'bg-gray-500' : 'bg-red-600', true);
-                    setTimeout(() => {
-                        copyBtn.textContent = originalText;
-                        copyBtn.classList.toggle('bg-green-600', true);
-                        copyBtn.classList.toggle('hover:bg-green-700', true);
-                        copyBtn.classList.toggle(successful ? 'bg-gray-500' : 'bg-red-600', false);
-                    }, 2000);
-                } catch (err) {
-                    console.error('Falha ao copiar texto: ', err);
-                }
-                window.getSelection().removeAllRanges();
+                document.execCommand('copy');
+                const copyBtn = document.getElementById('copy-evolution-btn');
+                copyBtn.textContent = 'Copiado!';
+                setTimeout(() => { copyBtn.textContent = 'Copiar Texto'; }, 2000);
             }
-
-            // --- MODAL GENÉRICO ---
+            
+            // --- MODAIS ---
             function showModal(action) {
                 modalAction = action;
                 const modal = document.getElementById('modal');
@@ -849,8 +976,8 @@
                 const cancelBtn = document.getElementById('modal-cancel');
                 const iconEl = document.getElementById('modal-icon');
                 const configs = {
-                    'new': { title: 'Criar Novo Passômetro?', text: 'Esta ação irá apagar TODOS os dados do paciente atual. Deseja continuar?', btnClass: 'bg-green-600 hover:bg-green-700', icon: `<svg class="h-8 w-8 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" /></svg>`, showConfirm: true, showCancel: true },
-                    'end': { title: 'Encerrar Passômetro?', text: 'Esta ação irá gerar um PDF com todo o histórico do paciente para download e depois limpará todos os dados. Deseja continuar?', btnClass: 'bg-red-600 hover:bg-red-700', icon: `<svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`, showConfirm: true, showCancel: true },
+                    'clear': { title: 'Limpar Box?', text: 'Isso irá apagar permanentemente os dados do paciente atual neste box. Essa ação não pode ser desfeita. Deseja continuar?', btnClass: 'bg-yellow-600 hover:bg-yellow-700', icon: `<svg class="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`, showConfirm: true, showCancel: true },
+                    'end': { title: 'Encerrar e Arquivar?', text: 'Isso irá gerar um PDF completo para download e depois limpará o box. Deseja continuar?', btnClass: 'bg-red-600 hover:bg-red-700', icon: `<svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`, showConfirm: true, showCancel: true },
                     'generatingPDF': { title: 'Gerando PDF...', text: 'Por favor, aguarde. O download começará em breve.', btnClass: 'bg-blue-500', icon: `<svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`, showConfirm: false, showCancel: false }
                 };
                 const config = configs[action];
@@ -862,38 +989,50 @@
                 cancelBtn.style.display = config.showCancel ? 'block' : 'none';
                 modal.classList.remove('hidden');
             }
-            
             function hideModal() {
-                document.getElementById('modal').classList.add('hidden');
+                const modal = document.getElementById('modal');
+                if(modal) modal.classList.add('hidden');
                 modalAction = null;
             }
-
+            
             // --- INICIALIZAÇÃO ---
+            function getBoxIdFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const box = params.get('box');
+                return box ? box.toUpperCase().replace(' ', '-') : 'BOX-01';
+            }
+
             function initializeApp() {
-                document.getElementById('modal-confirm').onclick = () => {
-                    if (modalAction === 'new') createNewPassometro();
-                    if (modalAction === 'end') endPassometro();
-                    if(modalAction !== 'end') hideModal();
-                };
-                document.getElementById('modal-cancel').addEventListener('click', hideModal);
-                document.getElementById('evolution-modal-generate').addEventListener('click', generateAndInsertEvolution);
-                document.getElementById('copy-evolution-btn').addEventListener('click', copyEvolutionText);
-                document.getElementById('evolution-modal-close').addEventListener('click', () => {
-                    document.getElementById('evolution-modal').classList.add('hidden');
-                });
-                document.getElementById('btn-new-passometro').addEventListener('click', () => showModal('new'));
-                document.getElementById('btn-end-passometro').addEventListener('click', () => showModal('end'));
-                document.getElementById('tab-btn-admissao').addEventListener('click', () => switchTab('admissao'));
-                document.getElementById('tab-btn-passometro').addEventListener('click', () => switchTab('passometro'));
-                document.getElementById('btn-add-day').addEventListener('click', () => _addDailyRecord(null, true));
-                
-                // NOVO: Personaliza o título com o ID do Box
-                if (boxId) {
-                    document.getElementById('header-title').textContent = `Passômetro CTI - BOX ${boxId}`;
+                try {
+                    firebase.initializeApp(firebaseConfig);
+                    db = firebase.firestore();
+                } catch (e) {
+                    console.error("Erro ao inicializar o Firebase.", e);
+                    alert("ERRO DE CONFIGURAÇÃO: Verifique as credenciais do Firebase.");
+                    return;
                 }
 
-                loadState();
-                render();
+                currentBoxId = getBoxIdFromUrl();
+                showLoader();
+                listenToBoxData(currentBoxId);
+
+                document.getElementById('modal-confirm').onclick = () => {
+                    if (modalAction === 'clear') clearBox();
+                    if (modalAction === 'end') endPassometro();
+                    hideModal();
+                };
+                document.getElementById('modal-cancel').onclick = hideModal;
+                document.getElementById('btn-clear-box').addEventListener('click', () => showModal('clear'));
+                document.getElementById('btn-end-passometro').addEventListener('click', () => showModal('end'));
+                document.getElementById('btn-new-passometro-empty').addEventListener('click', admitNewPatient);
+                document.getElementById('btn-add-day').addEventListener('click', addDailyRecord);
+                document.getElementById('tab-btn-admissao').addEventListener('click', () => switchTab('admissao'));
+                document.getElementById('tab-btn-dados-clinicos').addEventListener('click', () => switchTab('dados-clinicos'));
+                document.getElementById('tab-btn-passometro').addEventListener('click', () => switchTab('passometro'));
+
+                document.getElementById('evolution-modal-generate').addEventListener('click', generateAndInsertEvolution);
+                document.getElementById('copy-evolution-btn').addEventListener('click', copyEvolutionText);
+                document.getElementById('evolution-modal-close').addEventListener('click', () => document.getElementById('evolution-modal').classList.add('hidden'));
             }
             
             initializeApp();
@@ -901,3 +1040,4 @@
     </script>
 </body>
 </html>
+
