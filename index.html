@@ -462,7 +462,7 @@
             <div class="flex justify-between items-center border-b pb-2 mb-6">
                  <h2 class="text-xl font-bold text-gray-700">Passômetro - Dia <span class="record-date-display"></span></h2>
                  <div class="flex items-center space-x-2 no-print">
-                    <button class="generate-consolidado-btn text-green-600 hover:text-green-800 p-1.5 rounded-full hover:bg-green-50" title="Gerar Consolidado para SPDATA">
+                     <button class="generate-consolidado-btn text-green-600 hover:text-green-800 p-1.5 rounded-full hover:bg-green-50" title="Gerar Consolidado para SPDATA">
                          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
                         </svg>
@@ -565,35 +565,351 @@
             };
 
             // --- FUNÇÕES DE ESTRUTURA E ESTADO ---
-            function getEmptyData() { /* ... */ }
-            function updateFirestoreData() { /* ... */ }
-            function debounceUpdateFirestore() { /* ... */ }
-            function listenToBoxData(boxId) { /* ... */ }
+            function getEmptyData() {
+                const today = new Date().toISOString().split('T')[0];
+                return {
+                    admissao: {
+                        nome: '', idade: '', dataAdmissao: today, box: currentBoxId,
+                        historia: '', tratamentoPrevio: '', comorbidades: '',
+                        examesRelevantes: '', medicamentosContinuo: '', condutaInicial: ''
+                    },
+                    dadosClinicos: {},
+                    passometros: []
+                };
+            }
+            function updateFirestoreData() {
+                if (db && currentBoxId && appData) {
+                    const cleanData = JSON.parse(JSON.stringify(appData));
+                    db.collection('passometros').doc(currentBoxId).set(cleanData)
+                        .catch(error => console.error("Erro ao salvar dados: ", error));
+                }
+            }
+            function debounceUpdateFirestore() {
+                clearTimeout(debounceTimer);
+                debounceTimer = setTimeout(updateFirestoreData, 800);
+            }
+            function listenToBoxData(boxId) {
+                if (firestoreUnsubscribe) firestoreUnsubscribe();
+                const docRef = db.collection('passometros').doc(boxId);
+                firestoreUnsubscribe = docRef.onSnapshot(doc => {
+                    if (doc.exists) {
+                        appData = doc.data();
+                        if (!appData.passometros) appData.passometros = [];
+                        if (!appData.dadosClinicos) appData.dadosClinicos = {};
+                    } else {
+                        appData = null; 
+                    }
+                    render();
+                    hideLoader();
+                }, error => {
+                    console.error("Erro ao escutar dados: ", error);
+                    alert("Não foi possível conectar ao banco de dados.");
+                    hideLoader();
+                });
+            }
             
             // --- FUNÇÕES DE UI ---
-            function showLoader() { /* ... */ }
-            function hideLoader() { /* ... */ }
-            function switchTab(tabName) { /* ... */ }
-            function updateHeader() { /* ... */ }
-            function render() { /* ... */ }
+            function showLoader() { document.getElementById('loader').style.display = 'flex'; document.getElementById('main-container').classList.add('hidden'); }
+            function hideLoader() { document.getElementById('loader').style.display = 'none'; document.getElementById('main-container').classList.remove('hidden'); }
+
+            function switchTab(tabName) {
+                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
+                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+                const button = document.getElementById(`tab-btn-${tabName}`);
+                const content = document.getElementById(`tab-content-${tabName}`);
+                if(button) button.classList.add('active');
+                if(content) content.classList.add('active');
+            }
+            
+            function updateHeader() {
+                const boxTitle = currentBoxId ? ` - ${currentBoxId.replace('-', ' ')}` : '';
+                document.getElementById('header-title').textContent = `Passômetro CTI${boxTitle}`;
+                const nome = appData && appData.admissao ? appData.admissao.nome : '';
+                document.getElementById('header-subtitle').textContent = nome ? `Paciente: ${nome}` : 'Nenhum paciente admitido';
+                const dcPatientName = document.getElementById('dados-clinicos-patient-name');
+                if(dcPatientName) dcPatientName.textContent = 'Paciente: ' + (nome || 'Não informado');
+            }
+
+            function render() {
+                if (appData === null) {
+                    document.getElementById('empty-box-message').classList.remove('hidden');
+                    document.getElementById('patient-content').classList.add('hidden');
+                } else {
+                    document.getElementById('empty-box-message').classList.add('hidden');
+                    document.getElementById('patient-content').classList.remove('hidden');
+
+                    const activeTabButton = document.querySelector('#tabs-nav .tab-button.active');
+                    const activeTabId = activeTabButton ? activeTabButton.id.replace('tab-btn-', '') : 'admissao';
+
+                    const admissaoContainer = document.getElementById('tab-content-admissao');
+                    admissaoContainer.innerHTML = '';
+                    const admissaoTemplate = document.getElementById('admissao-template').content.cloneNode(true);
+                    admissaoContainer.appendChild(admissaoTemplate);
+                    Object.keys(appData.admissao).forEach(field => {
+                        const input = admissaoContainer.querySelector(`.ad-field[data-field="${field}"]`);
+                        if (input) input.value = appData.admissao[field] || '';
+                    });
+                    admissaoContainer.querySelector('.ad-field[data-field="box"]').value = currentBoxId;
+
+                    const dadosClinicosContainer = document.getElementById('tab-content-dados-clinicos');
+                    dadosClinicosContainer.innerHTML = '';
+                    const dadosClinicosTemplate = document.getElementById('dados-clinicos-template').content.cloneNode(true);
+                    dadosClinicosContainer.appendChild(dadosClinicosTemplate);
+                    if(appData.dadosClinicos) {
+                        dadosClinicosContainer.querySelectorAll('.dc-field').forEach(input => {
+                            const field = input.dataset.field || input.name;
+                            const value = appData.dadosClinicos[field];
+                            if (input.type === 'radio') {
+                                if (input.value === value) input.checked = true;
+                            } else if (input.type === 'checkbox') {
+                                input.checked = !!value;
+                            } else {
+                                input.value = value || '';
+                            }
+                        });
+                    }
+
+                    const dailyContainer = document.getElementById('daily-records-container');
+                    dailyContainer.innerHTML = '';
+                    if (appData.passometros) {
+                        appData.passometros.forEach((record, index) => _addDailyRecordUI(record, index));
+                    }
+                    
+                    switchTab(activeTabId);
+                }
+                updateHeader();
+                addEventListeners();
+            }
 
             // --- FUNÇÕES DE DADOS ---
-            function admitNewPatient() { /* ... */ }
-            function addDailyRecord() { /* ... (com a lógica de automação) ... */ }
-            function _addDailyRecordUI(recordData, index) { /* ... */ }
-            function removeDailyRecord(button) { /* ... */ }
-            function autoResizeTextarea(textarea) { /* ... */ }
+            function admitNewPatient() {
+                appData = getEmptyData();
+                updateFirestoreData();
+            }
+            
+            function addDailyRecord() {
+                if (!appData.passometros) appData.passometros = [];
 
-            // --- LISTENERS ---
-            function addEventListeners() { /* ... */ }
-            function handleFieldInput(event) { /* ... */ }
+                const get24hLineValue = (text) => {
+                    if (!text) return '';
+                    const match = text.match(/24\s*H(?:ORAS)?:\s*([^\n]*)/i);
+                    return match && match[1] ? match[1].trim() : '';
+                };
 
-            // --- PDF E ARQUIVAMENTO ---
-            function clearBox() { /* ... */ }
-            function prepareElementForCanvas(element) { /* ... */ }
-            function cleanupElementAfterCanvas(element) { /* ... */ }
-            async function endPassometro() { /* ... (com upload para o Storage) ... */ }
-            async function downloadAndPrintSection(button) { /* ... */ }
+                const getNumeric24hValue = (text) => {
+                    if (!text) return 0;
+                    const match = text.match(/24\s*H(?:ORAS)?:\s*([+-]?\d*\.?\d+)/i);
+                    return match && match[1] ? parseFloat(match[1]) : 0;
+                };
+                
+                const incrementDayCounters = (text) => {
+                    if (!text) return '';
+                    return text.replace(/\b(D)(\d+)\b/gi, (match, p1, p2) => {
+                        const dayNumber = parseInt(p2, 10);
+                        return p1 + (dayNumber + 1);
+                    });
+                };
+
+                let newRecord = {};
+                const lastRecord = appData.passometros.length > 0 ? appData.passometros[appData.passometros.length - 1] : null;
+
+                if (lastRecord) {
+                    const lastDate = new Date(lastRecord.date + 'T12:00:00Z');
+                    lastDate.setDate(lastDate.getDate() + 1);
+                    
+                    const totalAcumulado = appData.passometros.reduce((acc, record) => {
+                        return acc + getNumeric24hValue(record.balanco);
+                    }, 0);
+
+                    newRecord = {
+                        date: lastDate.toISOString().split('T')[0],
+                        diagPrimario: lastRecord.diagPrimario,
+                        diagSecundario: lastRecord.diagSecundario,
+                        invasivos: incrementDayCounters(lastRecord.invasivos),
+                        atb: incrementDayCounters(lastRecord.atb),
+                        culturas: lastRecord.culturas,
+                        gasometrias: lastRecord.gasometrias,
+                        vmO2: lastRecord.vmO2,
+                        especialista: lastRecord.especialista,
+                        evoDiurno: '',
+                        evoNoturno: '',
+                        nutricao: lastRecord.nutricao,
+                        transfusoes: lastRecord.transfusoes,
+                        medicamentos: lastRecord.medicamentos,
+                        exames: lastRecord.exames,
+                        conduta: lastRecord.conduta,
+                        glicemias: `DIA ANTERIOR: ${get24hLineValue(lastRecord.glicemias)}\n12 HORAS:\n24 HORAS:`,
+                        febre: `DIA ANTERIOR: ${get24hLineValue(lastRecord.febre)}\n12 HORAS:\n24 HORAS:`,
+                        diurese: `DIA ANTERIOR: ${get24hLineValue(lastRecord.diurese)}\n12 HORAS:\n24 HORAS:`,
+                        evacuacoes: `DIA ANTERIOR: ${get24hLineValue(lastRecord.evacuacoes)}\n12 HORAS:\n24 HORAS:`,
+                        drenos: `DIA ANTERIOR: ${get24hLineValue(lastRecord.drenos)}\n12 HORAS:\n24 HORAS:`,
+                        balanco: `ACUMULADO: ${totalAcumulado.toFixed(0)}\nDIA ANTERIOR: ${getNumeric24hValue(lastRecord.balanco).toFixed(0)}\n12 HORAS:\n24 HORAS:`,
+                    };
+                } else {
+                    newRecord = {
+                        date: appData.admissao.dataAdmissao || new Date().toISOString().split('T')[0],
+                        glicemias: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                        febre: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                        diurese: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                        evacuacoes: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                        drenos: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                        balanco: `ACUMULADO: 0\nDIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
+                    };
+                }
+                
+                appData.passometros.push(newRecord);
+                updateFirestoreData();
+            }
+            
+            function _addDailyRecordUI(recordData, index) {
+                const template = document.getElementById('daily-record-template').content.cloneNode(true);
+                const dailyRecordElement = template.querySelector('.daily-record');
+                dailyRecordElement.dataset.index = index;
+                template.querySelector('.paciente-nome').value = appData.admissao.nome || '';
+                template.querySelector('.comorbidades').value = appData.admissao.comorbidades || '';
+                const recordDateInput = template.querySelector('.record-date');
+                const recordDateDisplay = template.querySelector('.record-date-display');
+                if(recordData.date) {
+                    recordDateInput.value = recordData.date;
+                    recordDateDisplay.textContent = new Date(recordData.date + 'T12:00:00Z').toLocaleDateString('pt-BR');
+                }
+                Object.keys(recordData).forEach(field => {
+                    const input = template.querySelector(`.daily-field[data-field="${field}"]`);
+                    if(input) input.value = recordData[field] || '';
+                });
+                document.getElementById('daily-records-container').appendChild(template);
+            }
+
+            function removeDailyRecord(button) {
+                const recordElement = button.closest('.daily-record');
+                const indexToRemove = parseInt(recordElement.dataset.index, 10);
+                if (!isNaN(indexToRemove)) {
+                    appData.passometros.splice(indexToRemove, 1);
+                    updateFirestoreData();
+                }
+            }
+            function autoResizeTextarea(textarea) {
+                if(textarea) {
+                    textarea.style.height = 'auto';
+                    textarea.style.height = (textarea.scrollHeight) + 'px';
+                }
+            }
+
+            function addEventListeners() {
+                document.querySelectorAll('textarea').forEach(textarea => { 
+                    textarea.addEventListener('input', () => autoResizeTextarea(textarea));
+                    setTimeout(() => autoResizeTextarea(textarea), 0);
+                });
+                document.querySelectorAll('.ad-field, .daily-field, .dc-field').forEach(input => {
+                    input.addEventListener('input', handleFieldInput);
+                    input.addEventListener('change', handleFieldInput);
+                });
+                document.querySelectorAll('.print-pdf-btn').forEach(btn => { 
+                    btn.addEventListener('click', () => downloadAndPrintSection(btn));
+                });
+                document.querySelectorAll('.remove-btn').forEach(btn => {
+                    btn.addEventListener('click', () => removeDailyRecord(btn));
+                 });
+                document.querySelectorAll('.generate-consolidado-btn').forEach(btn => {
+                    btn.addEventListener('click', () => showConsolidadoModal(btn));
+                });
+            }
+
+            function handleFieldInput(event) {
+                const input = event.target;
+                const field = input.dataset.field || input.name;
+                
+                if (input.classList.contains('ad-field')) {
+                    appData.admissao[field] = input.value;
+                    if(field === 'nome') updateHeader();
+                } else if (input.classList.contains('dc-field')) {
+                    if(!appData.dadosClinicos) appData.dadosClinicos = {};
+                     if (input.type === 'radio') {
+                        if(input.checked) appData.dadosClinicos[field] = input.value;
+                    } else if (input.type === 'checkbox') {
+                        appData.dadosClinicos[field] = input.checked;
+                    } else {
+                        appData.dadosClinicos[field] = input.value;
+                    }
+                } else if (input.closest('.daily-record')) {
+                    const recordIndex = input.closest('.daily-record').dataset.index;
+                    if (recordIndex !== undefined && appData.passometros[recordIndex]) {
+                        appData.passometros[recordIndex][input.dataset.field] = input.value;
+                    }
+                }
+                debounceUpdateFirestore();
+            }
+
+            // --- AÇÕES DE GERENCIAMENTO E PDF ---
+            function clearBox() { 
+                if (db && currentBoxId) {
+                    db.collection('passometros').doc(currentBoxId).delete();
+                }
+            }
+
+            function prepareElementForCanvas(element) {
+                const textareas = element.querySelectorAll('textarea');
+                textareas.forEach(textarea => {
+                    const pre = document.createElement('pre');
+                    pre.textContent = textarea.value;
+                    const style = window.getComputedStyle(textarea);
+                    pre.style.cssText = `font-family:${style.fontFamily};font-size:${style.fontSize};white-space:pre-wrap;word-wrap:break-word;border:${style.border};border-radius:${style.borderRadius};padding:${style.padding};min-height:${textarea.style.height};display:block;color:${style.color};background-color:${style.backgroundColor};line-height:${style.lineHeight};`;
+                    pre.dataset.isClone = 'true';
+                    textarea.style.display = 'none';
+                    textarea.parentNode.insertBefore(pre, textarea);
+                });
+            }
+
+            function cleanupElementAfterCanvas(element) {
+                element.querySelectorAll('pre[data-is-clone="true"]').forEach(clone => clone.remove());
+                element.querySelectorAll('textarea').forEach(textarea => textarea.style.display = '');
+            }
+
+            async function endPassometro() {
+                if (!appData || !appData.admissao.nome) { hideModal(); return; }
+                showModal('generatingPDF');
+                const { jsPDF } = window.jspdf;
+                const pdf = new jsPDF('p', 'mm', 'a4');
+                const allElements = [
+                    document.querySelector('#tab-content-admissao .form-section'),
+                    document.querySelector('#tab-content-dados-clinicos .form-section'),
+                    ...document.querySelectorAll('#daily-records-container .daily-record')
+                ].filter(Boolean);
+
+                try {
+                    for (let i = 0; i < allElements.length; i++) {
+                        const element = allElements[i];
+                        prepareElementForCanvas(element);
+                        const canvas = await html2canvas(element, { scale: 2.5, useCORS: true, windowHeight: element.scrollHeight, scrollY: -window.scrollY });
+                        cleanupElementAfterCanvas(element);
+                        const imgData = canvas.toDataURL('image/png');
+                        const imgProps = pdf.getImageProperties(imgData);
+                        const imgHeight = (imgProps.height * (210 - 20)) / imgProps.width;
+                        if (i > 0) pdf.addPage();
+                        pdf.addImage(imgData, 'PNG', 10, 10, 210 - 20, imgHeight, undefined, 'FAST');
+                    }
+                    const pacienteNome = appData.admissao.nome.replace(/[^a-zA-Z0-9]/g, '_') || 'Paciente';
+                    const dataAdmissao = appData.admissao.dataAdmissao || 'sem_data';
+                    const dataAlta = new Date().toISOString().split('T')[0];
+                    const fileName = `${pacienteNome}_Admissao-${dataAdmissao}_Alta-${dataAlta}.pdf`;
+                    
+                    const pdfBlob = pdf.output('blob');
+
+                    const storageRef = storage.ref(`arquivos_passometro/${currentBoxId}/${fileName}`);
+                    await storageRef.put(pdfBlob);
+                    
+                    pdf.save(fileName);
+                    clearBox();
+                } catch (error) {
+                    console.error("Erro ao gerar ou arquivar PDF:", error);
+                    alert("Ocorreu um erro ao arquivar o PDF. Verifique o console para mais detalhes.")
+                    allElements.forEach(el => cleanupElementAfterCanvas(el));
+                } finally {
+                    hideModal();
+                }
+            }
+
+            async function downloadAndPrintSection(button) { /* ... (mesma lógica anterior) ... */ }
 
             // --- CONSOLIDADO SPDATA ---
             function showConsolidadoModal(button) {
@@ -650,18 +966,110 @@
             }
 
             // --- ARQUIVO ONLINE ---
-            async function renderArchive() { /* ... (conforme implementado anteriormente) ... */ }
+            async function renderArchive() {
+                const container = document.getElementById('tab-content-arquivo');
+                container.innerHTML = document.getElementById('arquivo-template').content.cloneNode(true).firstElementChild.outerHTML;
+                const listContainer = container.querySelector('#archive-list');
+                listContainer.innerHTML = '<p class="text-center text-gray-500">Buscando arquivos...</p>';
+
+                if (!storage || !currentBoxId) {
+                    listContainer.innerHTML = '<p class="text-center text-red-500">Serviço de armazenamento não está disponível.</p>';
+                    return;
+                }
+
+                const listRef = storage.ref(`arquivos_passometro/${currentBoxId}`);
+                try {
+                    const res = await listRef.listAll();
+                    if (res.items.length === 0) {
+                        listContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum arquivo encontrado para este box.</p>';
+                        return;
+                    }
+
+                    listContainer.innerHTML = '';
+                    const filePromises = res.items.map(async itemRef => {
+                        const url = await itemRef.getDownloadURL();
+                        const parts = itemRef.name.replace('.pdf', '').split('_');
+                        const nome = parts[0] || "Nome não encontrado";
+                        const admissao = parts[1] || "Admissão: N/A";
+                        const alta = parts[2] || "Alta: N/A";
+                        return { url, nome, admissao, alta, name: itemRef.name };
+                    });
+
+                    const files = await Promise.all(filePromises);
+                    
+                    files.sort((a, b) => b.name.localeCompare(a.name)); // Ordena por nome de arquivo (mais recentes primeiro, se o nome incluir data)
+
+                    files.forEach(file => {
+                        const listItem = document.createElement('a');
+                        listItem.href = file.url;
+                        listItem.target = '_blank';
+                        listItem.className = 'block bg-gray-50 p-3 rounded-md hover:bg-blue-100 transition duration-300 border';
+                        listItem.innerHTML = `
+                            <div class="flex items-center space-x-4">
+                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
+                               <div>
+                                 <p class="font-bold text-blue-800">${file.nome.replace(/-/g, ' ')}</p>
+                                 <p class="text-sm text-gray-600">${file.admissao.replace(/-/g, '/')} | ${file.alta.replace(/-/g, '/')}</p>
+                               </div>
+                            </div>
+                        `;
+                        listContainer.appendChild(listItem);
+                    });
+                } catch (error) {
+                    console.error("Erro ao listar arquivos:", error);
+                    listContainer.innerHTML = '<p class="text-center text-red-500">Ocorreu um erro ao buscar os arquivos. Verifique as regras de segurança do Storage.</p>';
+                }
+            }
 
             // --- MODAIS ---
             function showModal(action) { /* ... */ }
             function hideModal() { /* ... */ }
             
             // --- INICIALIZAÇÃO ---
-            function getBoxIdFromUrl() { /* ... */ }
-            function initializeApp() { /* ... */ }
-            
-            // Re-colar o código JS completo da versão anterior aqui
-            // ...
+            function getBoxIdFromUrl() {
+                const params = new URLSearchParams(window.location.search);
+                const box = params.get('box');
+                return box ? box.toUpperCase().replace(' ', '-') : 'BOX-01';
+            }
+
+            function initializeApp() {
+                try {
+                    if (!firebase.apps.length) {
+                         firebase.initializeApp(firebaseConfig);
+                    }
+                    db = firebase.firestore();
+                    storage = firebase.storage();
+                } catch (e) {
+                    console.error("Erro ao inicializar o Firebase.", e);
+                    alert("ERRO DE CONFIGURAÇÃO: Verifique as credenciais do Firebase no código.");
+                    return;
+                }
+
+                currentBoxId = getBoxIdFromUrl();
+                showLoader();
+                listenToBoxData(currentBoxId);
+
+                document.getElementById('modal-confirm').onclick = () => {
+                    if (modalAction === 'clear') clearBox();
+                    if (modalAction === 'end') endPassometro();
+                    hideModal();
+                };
+                document.getElementById('modal-cancel').onclick = hideModal;
+                document.getElementById('btn-clear-box').addEventListener('click', () => showModal('clear'));
+                document.getElementById('btn-end-passometro').addEventListener('click', () => showModal('end'));
+                document.getElementById('btn-new-passometro-empty').addEventListener('click', admitNewPatient);
+                document.getElementById('btn-add-day').addEventListener('click', addDailyRecord);
+                document.getElementById('tab-btn-admissao').addEventListener('click', () => switchTab('admissao'));
+                document.getElementById('tab-btn-dados-clinicos').addEventListener('click', () => switchTab('dados-clinicos'));
+                document.getElementById('tab-btn-passometro').addEventListener('click', () => switchTab('passometro'));
+                document.getElementById('tab-btn-arquivo').addEventListener('click', () => {
+                    switchTab('arquivo');
+                    renderArchive();
+                });
+
+                document.getElementById('consolidado-modal-close').addEventListener('click', () => document.getElementById('consolidado-modal').classList.add('hidden'));
+                document.getElementById('copy-consolidado-btn').addEventListener('click', copyConsolidadoText);
+            }
             
             initializeApp();
         });
