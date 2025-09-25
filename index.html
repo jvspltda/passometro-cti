@@ -169,7 +169,8 @@
             <div id="patient-content">
                 <div id="management-panel" class="form-section mb-6 no-print">
                     <h3 class="text-lg font-bold text-gray-700 mb-4">Gerenciamento do Passômetro</h3>
-                    <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                        <button id="btn-change-box" class="bg-purple-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-purple-700 transition duration-300">Mudar de Box</button>
                         <button id="btn-clear-box" class="bg-yellow-500 text-white font-bold py-2 px-4 rounded-lg hover:bg-yellow-600 transition duration-300">Limpar Box (Alta)</button>
                         <button id="btn-end-passometro" class="bg-red-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-red-700 transition duration-300">Encerrar e Arquivar Online</button>
                     </div>
@@ -218,6 +219,27 @@
                     <button id="modal-cancel" class="mt-2 px-4 py-2 bg-gray-200 text-gray-900 text-base font-medium rounded-md w-full shadow-sm hover:bg-gray-300 focus:outline-none focus:ring-2 focus:ring-gray-300">
                         Cancelar
                     </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div id="change-box-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full no-print hidden z-50">
+        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+            <div class="mt-3">
+                <h3 class="text-lg leading-6 font-medium text-gray-900 text-center">Mudar Paciente de Box</h3>
+                <div class="mt-4">
+                    <p class="text-sm text-gray-600 mb-1">Paciente: <strong id="change-box-patient-name" class="font-bold"></strong></p>
+                    <p class="text-sm text-gray-600 mb-4">Box Atual: <strong id="change-box-current-box" class="font-bold"></strong></p>
+                    <div class="form-field">
+                        <label for="new-box-select" class="font-semibold">Selecione o novo box de destino:</label>
+                        <select id="new-box-select" class="mt-1 block w-full"></select>
+                    </div>
+                    <p id="change-box-error" class="text-red-500 text-sm mt-2 hidden"></p>
+                </div>
+                <div class="items-center px-4 py-3 mt-4 -mx-5 -mb-5 bg-gray-50 text-right">
+                    <button id="change-box-cancel" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-md hover:bg-gray-300">Cancelar</button>
+                    <button id="change-box-confirm" class="px-4 py-2 bg-blue-600 text-white rounded-md hover:bg-blue-700 ml-2">Confirmar Mudança</button>
                 </div>
             </div>
         </div>
@@ -534,7 +556,7 @@
         <div class="form-section">
             <header class="text-center mb-8">
                 <h1 class="text-2xl font-bold text-gray-800">ARQUIVO DE PACIENTES</h1>
-                <p class="text-gray-600">PDFs de altas anteriores para este BOX</p>
+                <p class="text-gray-600">PDFs de altas anteriores de todos os boxes</p>
             </header>
             <div id="archive-list" class="space-y-3">
                 <!-- A lista de arquivos será inserida aqui -->
@@ -545,7 +567,6 @@
     <!-- Script Principal -->
     <script>
         document.addEventListener('DOMContentLoaded', () => {
-            // --- VARIÁVEIS GLOBAIS ---
             let appData = null;
             let currentBoxId = null;
             let db = null;
@@ -554,7 +575,6 @@
             let modalAction = null;
             let debounceTimer;
 
-            // --- CONFIGURAÇÃO DO FIREBASE ---
             const firebaseConfig = {
                 apiKey: "AIzaSyBgYHmtifm1odYFQAxrMCTL4AxIm8Bsc54",
                 authDomain: "passometro-cti-hospital.firebaseapp.com",
@@ -564,7 +584,6 @@
                 appId: "1:385304756594:web:c64297893b836397c8ddeb"
             };
 
-            // --- FUNÇÕES DE ESTRUTURA E ESTADO ---
             function getEmptyData() {
                 const today = new Date().toISOString().split('T')[0];
                 return {
@@ -577,6 +596,7 @@
                     passometros: []
                 };
             }
+
             function updateFirestoreData() {
                 if (db && currentBoxId && appData) {
                     const cleanData = JSON.parse(JSON.stringify(appData));
@@ -584,12 +604,14 @@
                         .catch(error => console.error("Erro ao salvar dados: ", error));
                 }
             }
+
             function debounceUpdateFirestore() {
                 clearTimeout(debounceTimer);
                 debounceTimer = setTimeout(updateFirestoreData, 800);
             }
+
             function listenToBoxData(boxId) {
-                 if (firestoreUnsubscribe) firestoreUnsubscribe();
+                if (firestoreUnsubscribe) firestoreUnsubscribe();
 
                 const activeElement = document.activeElement;
                 const activeElementIdentifier = {
@@ -613,7 +635,7 @@
 
                     if (activeElementIdentifier.field || activeElementIdentifier.name) {
                         let elementToFocus;
-                        if (activeElementIdentifier.index) {
+                        if (activeElementIdentifier.index !== null) {
                             const recordElement = document.querySelector(`.daily-record[data-index="${activeElementIdentifier.index}"]`);
                             if (recordElement) {
                                 elementToFocus = recordElement.querySelector(`[data-field="${activeElementIdentifier.field}"]`);
@@ -633,12 +655,11 @@
                     hideLoader();
                 }, error => {
                     console.error("Erro ao escutar dados: ", error);
-                    alert("Não foi possível conectar ao banco de dados.");
+                    alert("Não foi possível conectar ao banco de dados. Verifique as regras de segurança.");
                     hideLoader();
                 });
             }
             
-            // --- FUNÇÕES DE UI ---
             function showLoader() { document.getElementById('loader').style.display = 'flex'; document.getElementById('main-container').classList.add('hidden'); }
             function hideLoader() { document.getElementById('loader').style.display = 'none'; document.getElementById('main-container').classList.remove('hidden'); }
 
@@ -656,8 +677,10 @@
                 document.getElementById('header-title').textContent = `Passômetro CTI${boxTitle}`;
                 const nome = appData && appData.admissao ? appData.admissao.nome : '';
                 document.getElementById('header-subtitle').textContent = nome ? `Paciente: ${nome}` : 'Nenhum paciente admitido';
-                const dcPatientName = document.getElementById('dados-clinicos-patient-name');
-                if(dcPatientName) dcPatientName.textContent = 'Paciente: ' + (nome || 'Não informado');
+                if (document.querySelector('#tab-content-dados-clinicos:empty') === null) { // Check if template is rendered
+                    const dcPatientName = document.getElementById('dados-clinicos-patient-name');
+                    if(dcPatientName) dcPatientName.textContent = 'Paciente: ' + (nome || 'Não informado');
+                }
             }
 
             function render() {
@@ -672,9 +695,7 @@
                     const activeTabId = activeTabButton ? activeTabButton.id.replace('tab-btn-', '') : 'admissao';
 
                     const admissaoContainer = document.getElementById('tab-content-admissao');
-                    admissaoContainer.innerHTML = '';
-                    const admissaoTemplate = document.getElementById('admissao-template').content.cloneNode(true);
-                    admissaoContainer.appendChild(admissaoTemplate);
+                    admissaoContainer.innerHTML = document.getElementById('admissao-template').innerHTML;
                     Object.keys(appData.admissao).forEach(field => {
                         const input = admissaoContainer.querySelector(`.ad-field[data-field="${field}"]`);
                         if (input) input.value = appData.admissao[field] || '';
@@ -682,9 +703,7 @@
                     admissaoContainer.querySelector('.ad-field[data-field="box"]').value = currentBoxId;
 
                     const dadosClinicosContainer = document.getElementById('tab-content-dados-clinicos');
-                    dadosClinicosContainer.innerHTML = '';
-                    const dadosClinicosTemplate = document.getElementById('dados-clinicos-template').content.cloneNode(true);
-                    dadosClinicosContainer.appendChild(dadosClinicosTemplate);
+                    dadosClinicosContainer.innerHTML = document.getElementById('dados-clinicos-template').innerHTML;
                     if(appData.dadosClinicos) {
                         dadosClinicosContainer.querySelectorAll('.dc-field').forEach(input => {
                             const field = input.dataset.field || input.name;
@@ -711,7 +730,6 @@
                 addEventListeners();
             }
 
-            // --- FUNÇÕES DE DADOS ---
             function admitNewPatient() {
                 appData = getEmptyData();
                 updateFirestoreData();
@@ -743,13 +761,11 @@
                 let newRecord = {};
                 const lastRecord = appData.passometros.length > 0 ? appData.passometros[appData.passometros.length - 1] : null;
 
-                if (lastRecord) {
+                if (lastRecord && lastRecord.date) {
                     const lastDate = new Date(lastRecord.date + 'T12:00:00Z');
                     lastDate.setDate(lastDate.getDate() + 1);
                     
-                    const totalAcumulado = appData.passometros.reduce((acc, record) => {
-                        return acc + getNumeric24hValue(record.balanco);
-                    }, 0);
+                    const totalAcumulado = appData.passometros.reduce((acc, record) => acc + getNumeric24hValue(record.balanco), 0);
 
                     newRecord = {
                         date: lastDate.toISOString().split('T')[0],
@@ -761,8 +777,7 @@
                         gasometrias: lastRecord.gasometrias,
                         vmO2: lastRecord.vmO2,
                         especialista: lastRecord.especialista,
-                        evoDiurno: '',
-                        evoNoturno: '',
+                        evoDiurno: '', evoNoturno: '',
                         nutricao: lastRecord.nutricao,
                         transfusoes: lastRecord.transfusoes,
                         medicamentos: lastRecord.medicamentos,
@@ -792,22 +807,23 @@
             }
             
             function _addDailyRecordUI(recordData, index) {
-                const template = document.getElementById('daily-record-template').content.cloneNode(true);
-                const dailyRecordElement = template.querySelector('.daily-record');
+                const template = document.getElementById('daily-record-template');
+                const clone = template.content.cloneNode(true);
+                const dailyRecordElement = clone.querySelector('.daily-record');
                 dailyRecordElement.dataset.index = index;
-                template.querySelector('.paciente-nome').value = appData.admissao.nome || '';
-                template.querySelector('.comorbidades').value = appData.admissao.comorbidades || '';
-                const recordDateInput = template.querySelector('.record-date');
-                const recordDateDisplay = template.querySelector('.record-date-display');
+                clone.querySelector('.paciente-nome').value = appData.admissao.nome || '';
+                clone.querySelector('.comorbidades').value = appData.admissao.comorbidades || '';
+                const recordDateInput = clone.querySelector('.record-date');
+                const recordDateDisplay = clone.querySelector('.record-date-display');
                 if(recordData.date) {
                     recordDateInput.value = recordData.date;
                     recordDateDisplay.textContent = new Date(recordData.date + 'T12:00:00Z').toLocaleDateString('pt-BR');
                 }
                 Object.keys(recordData).forEach(field => {
-                    const input = template.querySelector(`.daily-field[data-field="${field}"]`);
+                    const input = clone.querySelector(`.daily-field[data-field="${field}"]`);
                     if(input) input.value = recordData[field] || '';
                 });
-                document.getElementById('daily-records-container').appendChild(template);
+                document.getElementById('daily-records-container').appendChild(clone);
             }
 
             function removeDailyRecord(button) {
@@ -870,7 +886,6 @@
                 debounceUpdateFirestore();
             }
 
-            // --- AÇÕES DE GERENCIAMENTO E PDF ---
             function clearBox() { 
                 if (db && currentBoxId) {
                     db.collection('passometros').doc(currentBoxId).delete();
@@ -921,11 +936,11 @@
                     const pacienteNome = appData.admissao.nome.replace(/[^a-zA-Z0-9]/g, '_') || 'Paciente';
                     const dataAdmissao = appData.admissao.dataAdmissao || 'sem_data';
                     const dataAlta = new Date().toISOString().split('T')[0];
-                    const fileName = `${pacienteNome}_Admissao-${dataAdmissao}_Alta-${dataAlta}.pdf`;
+                    const fileName = `${pacienteNome}_BOX-${currentBoxId}_AD-${dataAdmissao}_ALTA-${dataAlta}.pdf`;
                     
                     const pdfBlob = pdf.output('blob');
 
-                    const storageRef = storage.ref(`arquivos_passometro/${currentBoxId}/${fileName}`);
+                    const storageRef = storage.ref(`arquivos_passometro/todos/${fileName}`);
                     await storageRef.put(pdfBlob);
                     
                     pdf.save(fileName);
@@ -941,7 +956,6 @@
 
             async function downloadAndPrintSection(button) { /* ... */ }
 
-            // --- CONSOLIDADO SPDATA ---
             function showConsolidadoModal(button) {
                 const recordElement = button.closest('.daily-record');
                 const index = parseInt(recordElement.dataset.index, 10);
@@ -995,23 +1009,22 @@
                 setTimeout(() => { copyBtn.textContent = 'Copiar Texto'; }, 2000);
             }
 
-            // --- ARQUIVO ONLINE ---
             async function renderArchive() {
                 const container = document.getElementById('tab-content-arquivo');
-                container.innerHTML = document.getElementById('arquivo-template').content.cloneNode(true).firstElementChild.outerHTML;
+                container.innerHTML = document.getElementById('arquivo-template').innerHTML;
                 const listContainer = container.querySelector('#archive-list');
                 listContainer.innerHTML = '<p class="text-center text-gray-500">Buscando arquivos...</p>';
 
-                if (!storage || !currentBoxId) {
+                if (!storage) {
                     listContainer.innerHTML = '<p class="text-center text-red-500">Serviço de armazenamento não está disponível.</p>';
                     return;
                 }
 
-                const listRef = storage.ref(`arquivos_passometro/${currentBoxId}`);
+                const listRef = storage.ref('arquivos_passometro/todos');
                 try {
                     const res = await listRef.listAll();
                     if (res.items.length === 0) {
-                        listContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum arquivo encontrado para este box.</p>';
+                        listContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum arquivo encontrado.</p>';
                         return;
                     }
 
@@ -1020,9 +1033,10 @@
                         const url = await itemRef.getDownloadURL();
                         const parts = itemRef.name.replace('.pdf', '').split('_');
                         const nome = parts[0] || "Nome não encontrado";
-                        const admissao = parts[1] || "Admissão: N/A";
-                        const alta = parts[2] || "Alta: N/A";
-                        return { url, nome, admissao, alta, name: itemRef.name };
+                        const box = parts[1] || "Box N/A";
+                        const admissao = parts[2] || "Admissão: N/A";
+                        const alta = parts[3] || "Alta: N/A";
+                        return { url, nome, box, admissao, alta, name: itemRef.name };
                     });
 
                     const files = await Promise.all(filePromises);
@@ -1038,8 +1052,8 @@
                             <div class="flex items-center space-x-4">
                                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
                                <div>
-                                 <p class="font-bold text-blue-800">${file.nome.replace(/-/g, ' ')}</p>
-                                 <p class="text-sm text-gray-600">${file.admissao.replace(/-/g, '/')} | ${file.alta.replace(/-/g, '/')}</p>
+                                 <p class="font-bold text-blue-800">${file.nome.replace(/-/g, ' ')} <span class="text-sm font-medium text-gray-600">(${file.box})</span></p>
+                                 <p class="text-sm text-gray-600">${file.admissao.replace('AD-', 'Admissão: ').replace(/-/g, '/')} | ${file.alta.replace('ALTA-', 'Alta: ').replace(/-/g, '/')}</p>
                                </div>
                             </div>
                         `;
@@ -1051,11 +1065,102 @@
                 }
             }
 
-            // --- MODAIS ---
-            function showModal(action) { /* ... (mesma lógica anterior) ... */ }
-            function hideModal() { /* ... */ }
+            function showModal(action) {
+                modalAction = action;
+                const modal = document.getElementById('modal');
+                if (!modal) return;
+                const title = document.getElementById('modal-title');
+                const text = document.getElementById('modal-text');
+                const confirmBtn = document.getElementById('modal-confirm');
+                const cancelBtn = document.getElementById('modal-cancel');
+                const iconEl = document.getElementById('modal-icon');
+                const configs = {
+                    'clear': { title: 'Limpar Box?', text: 'Isso irá apagar permanentemente os dados do paciente atual neste box. Essa ação não pode ser desfeita. Deseja continuar?', btnClass: 'bg-yellow-600 hover:bg-yellow-700', icon: `<svg class="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`, showConfirm: true, showCancel: true },
+                    'end': { title: 'Encerrar e Arquivar?', text: 'Isso irá gerar um PDF completo para download e depois limpará o box. Deseja continuar?', btnClass: 'bg-red-600 hover:bg-red-700', icon: `<svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`, showConfirm: true, showCancel: true },
+                    'generatingPDF': { title: 'Gerando PDF...', text: 'Por favor, aguarde. O download começará em breve.', btnClass: 'bg-blue-500', icon: `<svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`, showConfirm: false, showCancel: false }
+                };
+                const config = configs[action];
+                title.textContent = config.title;
+                text.textContent = config.text;
+                iconEl.innerHTML = config.icon;
+                confirmBtn.className = `px-4 py-2 text-white text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.btnClass}`;
+                confirmBtn.style.display = config.showConfirm ? 'block' : 'none';
+                cancelBtn.style.display = config.showCancel ? 'block' : 'none';
+                modal.classList.remove('hidden');
+            }
+            function hideModal() {
+                const modal = document.getElementById('modal');
+                if(modal) modal.classList.add('hidden');
+                modalAction = null;
+            }
             
-            // --- INICIALIZAÇÃO ---
+            function showChangeBoxModal() {
+                if (!appData) return;
+                const modal = document.getElementById('change-box-modal');
+                const select = document.getElementById('new-box-select');
+                const errorMsg = document.getElementById('change-box-error');
+                
+                document.getElementById('change-box-patient-name').textContent = appData.admissao.nome || 'N/A';
+                document.getElementById('change-box-current-box').textContent = currentBoxId;
+                
+                select.innerHTML = '';
+                errorMsg.classList.add('hidden');
+                
+                for (let i = 1; i <= 9; i++) {
+                    const boxValue = `BOX-${String(i).padStart(2, '0')}`;
+                    const option = document.createElement('option');
+                    option.value = boxValue;
+                    option.textContent = boxValue.replace('-', ' ');
+                    if (boxValue === currentBoxId) {
+                        option.disabled = true;
+                    }
+                    select.appendChild(option);
+                }
+                modal.classList.remove('hidden');
+            }
+
+            async function transferPatient() {
+                const select = document.getElementById('new-box-select');
+                const newBoxId = select.value;
+                const errorMsg = document.getElementById('change-box-error');
+                const confirmBtn = document.getElementById('change-box-confirm');
+                
+                if (!newBoxId || newBoxId === currentBoxId) {
+                    errorMsg.textContent = "Por favor, selecione um box de destino válido.";
+                    errorMsg.classList.remove('hidden');
+                    return;
+                }
+
+                confirmBtn.disabled = true;
+                confirmBtn.textContent = "Transferindo...";
+                errorMsg.classList.add('hidden');
+
+                try {
+                    const targetDocRef = db.collection('passometros').doc(newBoxId);
+                    const targetDoc = await targetDocRef.get();
+                    if (targetDoc.exists) {
+                        throw new Error("O box de destino já está ocupado por outro paciente.");
+                    }
+
+                    const dataToTransfer = { ...appData };
+                    dataToTransfer.admissao.box = newBoxId;
+
+                    await targetDocRef.set(dataToTransfer);
+                    await db.collection('passometros').doc(currentBoxId).delete();
+
+                    const baseUrl = window.location.href.split('?')[0];
+                    window.location.href = `${baseUrl}?box=${newBoxId}`;
+
+                } catch (error) {
+                    console.error("Erro ao transferir paciente:", error);
+                    errorMsg.textContent = error.message;
+                    errorMsg.classList.remove('hidden');
+                } finally {
+                    confirmBtn.disabled = false;
+                    confirmBtn.textContent = "Confirmar Mudança";
+                }
+            }
+            
             function getBoxIdFromUrl() {
                 const params = new URLSearchParams(window.location.search);
                 const box = params.get('box');
@@ -1096,7 +1201,11 @@
                     switchTab('arquivo');
                     renderArchive();
                 });
-
+                document.getElementById('btn-change-box').addEventListener('click', showChangeBoxModal);
+                document.getElementById('change-box-confirm').addEventListener('click', transferPatient);
+                document.getElementById('change-box-cancel').addEventListener('click', () => {
+                    document.getElementById('change-box-modal').classList.add('hidden');
+                });
                 document.getElementById('consolidado-modal-close').addEventListener('click', () => document.getElementById('consolidado-modal').classList.add('hidden'));
                 document.getElementById('copy-consolidado-btn').addEventListener('click', copyConsolidadoText);
             }
