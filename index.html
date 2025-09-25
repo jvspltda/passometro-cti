@@ -589,7 +589,17 @@
                 debounceTimer = setTimeout(updateFirestoreData, 800);
             }
             function listenToBoxData(boxId) {
-                if (firestoreUnsubscribe) firestoreUnsubscribe();
+                 if (firestoreUnsubscribe) firestoreUnsubscribe();
+
+                const activeElement = document.activeElement;
+                const activeElementIdentifier = {
+                    field: activeElement ? activeElement.dataset.field : null,
+                    name: activeElement ? activeElement.name : null,
+                    index: activeElement && activeElement.closest('.daily-record') ? activeElement.closest('.daily-record').dataset.index : null,
+                    selectionStart: activeElement ? activeElement.selectionStart : null,
+                    selectionEnd: activeElement ? activeElement.selectionEnd : null,
+                };
+                
                 const docRef = db.collection('passometros').doc(boxId);
                 firestoreUnsubscribe = docRef.onSnapshot(doc => {
                     if (doc.exists) {
@@ -600,6 +610,26 @@
                         appData = null; 
                     }
                     render();
+
+                    if (activeElementIdentifier.field || activeElementIdentifier.name) {
+                        let elementToFocus;
+                        if (activeElementIdentifier.index) {
+                            const recordElement = document.querySelector(`.daily-record[data-index="${activeElementIdentifier.index}"]`);
+                            if (recordElement) {
+                                elementToFocus = recordElement.querySelector(`[data-field="${activeElementIdentifier.field}"]`);
+                            }
+                        } else {
+                            elementToFocus = document.querySelector(`[data-field="${activeElementIdentifier.field}"], [name="${activeElementIdentifier.name}"]`);
+                        }
+
+                        if (elementToFocus) {
+                            elementToFocus.focus();
+                            if (typeof elementToFocus.setSelectionRange === 'function') {
+                                elementToFocus.setSelectionRange(activeElementIdentifier.selectionStart, activeElementIdentifier.selectionEnd);
+                            }
+                        }
+                    }
+
                     hideLoader();
                 }, error => {
                     console.error("Erro ao escutar dados: ", error);
@@ -909,7 +939,7 @@
                 }
             }
 
-            async function downloadAndPrintSection(button) { /* ... (mesma lógica anterior) ... */ }
+            async function downloadAndPrintSection(button) { /* ... */ }
 
             // --- CONSOLIDADO SPDATA ---
             function showConsolidadoModal(button) {
@@ -997,7 +1027,7 @@
 
                     const files = await Promise.all(filePromises);
                     
-                    files.sort((a, b) => b.name.localeCompare(a.name)); // Ordena por nome de arquivo (mais recentes primeiro, se o nome incluir data)
+                    files.sort((a, b) => b.name.localeCompare(a.name)); 
 
                     files.forEach(file => {
                         const listItem = document.createElement('a');
@@ -1022,7 +1052,7 @@
             }
 
             // --- MODAIS ---
-            function showModal(action) { /* ... */ }
+            function showModal(action) { /* ... (mesma lógica anterior) ... */ }
             function hideModal() { /* ... */ }
             
             // --- INICIALIZAÇÃO ---
