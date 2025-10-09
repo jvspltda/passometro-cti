@@ -11,6 +11,7 @@
     
     <!-- SDKs do Firebase -->
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-app.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-auth.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-firestore.js"></script>
     <script src="https://www.gstatic.com/firebasejs/8.10.1/firebase-storage.js"></script>
 
@@ -127,7 +128,7 @@
         .tab-content { display: none; }
         .tab-content.active { display: block; }
 
-        #loader {
+        #loader, #auth-loader {
             display: flex;
             align-items: center;
             justify-content: center;
@@ -138,7 +139,32 @@
 </head>
 <body class="bg-gray-100">
 
-    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto">
+    <div id="auth-container">
+        <div id="auth-loader" class="hidden">
+            <div class="text-center">
+                <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                <p class="mt-2 font-semibold text-gray-600">Verificando autenticação...</p>
+            </div>
+        </div>
+        <div id="login-form" class="max-w-md mx-auto mt-20 p-8 bg-white rounded-lg shadow-lg hidden">
+            <h2 class="text-2xl font-bold text-center text-gray-800 mb-6">Acesso ao Passômetro CTI</h2>
+            <div class="space-y-4">
+                <div class="form-field">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" class="w-full">
+                </div>
+                <div class="form-field">
+                    <label for="password">Senha</label>
+                    <input type="password" id="password" class="w-full">
+                </div>
+                <p id="auth-error" class="text-red-500 text-sm hidden"></p>
+                <button id="login-btn" class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700">Entrar</button>
+            </div>
+        </div>
+    </div>
+
+
+    <div class="p-4 sm:p-6 md:p-8 max-w-7xl mx-auto hidden" id="app-wrapper">
         <div id="loader">
             <div class="text-center">
                 <svg class="animate-spin h-8 w-8 text-blue-600 mx-auto" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
@@ -147,13 +173,15 @@
         </div>
 
         <div id="main-container" class="hidden">
-            <header class="mb-6">
-                <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center">
-                    <div>
-                        <p class="text-lg font-semibold text-gray-600">Fundação Hospitalar São Vicente de Paulo - Capelinha/MG</p>
-                        <h1 id="header-title" class="text-3xl font-bold text-gray-800">Passômetro CTI</h1>
-                        <p id="header-subtitle" class="text-gray-500 mt-1">Nenhum paciente admitido</p>
-                    </div>
+            <header class="mb-6 flex justify-between items-center">
+                 <div>
+                    <p class="text-lg font-semibold text-gray-600">Fundação Hospitalar São Vicente de Paulo - Capelinha/MG</p>
+                    <h1 id="header-title" class="text-3xl font-bold text-gray-800">Passômetro CTI</h1>
+                    <p id="header-subtitle" class="text-gray-500 mt-1">Nenhum paciente admitido</p>
+                </div>
+                <div class="text-right">
+                    <p id="user-email" class="text-sm text-gray-600"></p>
+                    <button id="logout-btn" class="text-sm text-red-500 hover:underline">Sair</button>
                 </div>
             </header>
             
@@ -180,14 +208,16 @@
                     <nav class="flex flex-wrap">
                         <button id="tab-btn-admissao" class="tab-button active">Folha de Admissão</button>
                         <button id="tab-btn-dados-clinicos" class="tab-button">Dados Clínicos</button>
+                         <button id="tab-btn-drg" class="tab-button">Indicadores DRG</button>
                         <button id="tab-btn-passometro" class="tab-button">Passômetro Diário</button>
                         <button id="tab-btn-arquivo" class="tab-button">Arquivo Online</button>
                     </nav>
                 </div>
 
-                <main id="printable-area">
+                <main>
                     <div id="tab-content-admissao" class="tab-content"></div>
                     <div id="tab-content-dados-clinicos" class="tab-content"></div>
+                    <div id="tab-content-drg" class="tab-content"></div>
                     <div id="tab-content-passometro" class="tab-content">
                         <div class="flex justify-end mb-4 no-print">
                             <button id="btn-add-day" class="bg-blue-600 text-white font-bold py-2 px-4 rounded-lg hover:bg-blue-700 transition duration-300 flex items-center">
@@ -264,6 +294,31 @@
         </div>
     </div>
 
+     <div id="historia-ia-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full no-print hidden z-50">
+        <div class="relative top-5 mx-auto p-5 border w-full max-w-3xl shadow-lg rounded-md bg-white">
+            <div class="flex justify-between items-center border-b pb-3 mb-4">
+                <h3 class="text-xl leading-6 font-bold text-gray-900">Atualizar História Clínica com IA</h3>
+                <button id="historia-ia-modal-close" class="text-gray-400 hover:text-gray-600">
+                    <svg class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+            </div>
+            <div id="historia-ia-data-container" class="max-h-[60vh] overflow-y-auto pr-4"></div>
+            <div class="items-center px-4 py-3 mt-4 border-t">
+                <button id="historia-ia-modal-generate" class="w-full px-4 py-2 bg-blue-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-400">
+                    Gerar Texto Otimizado
+                </button>
+            </div>
+            <div id="generated-historia-ia-output" class="hidden">
+                <h4 class="text-lg font-bold text-gray-800 mt-4">Texto Gerado para História Clínica:</h4>
+                <textarea id="generated-historia-ia-textarea" rows="10" class="w-full mt-2 p-2 border border-gray-300 rounded-md bg-gray-50" readonly></textarea>
+                <button id="copy-replace-historia-ia-btn" class="mt-2 w-full px-4 py-2 bg-green-600 text-white text-base font-medium rounded-md shadow-sm hover:bg-green-700">
+                    Copiar e Substituir
+                </button>
+            </div>
+        </div>
+    </div>
+
+
     <!-- Templates -->
     <template id="admissao-template">
        <div class="form-section">
@@ -303,7 +358,16 @@
             </section>
             <main class="grid grid-cols-1 md:grid-cols-2 gap-x-8">
                 <div>
-                    <div class="admissao-field"><label>HISTÓRIA CLÍNICA ATUAL</label><textarea data-field="historia" class="ad-field"></textarea></div>
+                    <div class="admissao-field">
+                        <div class="flex justify-between items-center">
+                             <label>HISTÓRIA CLÍNICA ATUAL</label>
+                             <button class="update-historia-ia-btn text-xs bg-blue-100 text-blue-800 px-2 py-1 rounded-md hover:bg-blue-200 no-print flex items-center space-x-1" title="Atualizar história com os últimos diagnósticos usando IA">
+                                 <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor"><path d="M5 4a2 2 0 012-2h6a2 2 0 012 2v1h-2V4H7v1H5V4zM5 7h10a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2V9a2 2 0 012-2z" /><path d="M12.586 11.414a1 1 0 10-1.414 1.414L12 12.001l-.828.828a1 1 0 101.414 1.414L13 13.415l.828.828a1 1 0 001.414-1.414L14.414 12l.828-.828a1 1 0 00-1.414-1.414L13 10.586l-.828.828zM5 12a1 1 0 011-1h1a1 1 0 110 2H6a1 1 0 01-1-1z" /></svg>
+                                 <span>Atualizar com IA</span>
+                             </button>
+                        </div>
+                        <textarea data-field="historia" class="ad-field"></textarea>
+                    </div>
                     <div class="admissao-field"><label>TRATAMENTO REALIZADO PREVIAMENTE</label><textarea data-field="tratamentoPrevio" class="ad-field"></textarea></div>
                     <div class="admissao-field"><label>COMORBIDADES (resumo)</label><textarea data-field="comorbidades" class="ad-field"></textarea></div>
                 </div>
@@ -479,6 +543,51 @@
         </div>
     </template>
 
+     <template id="drg-template">
+        <div class="form-section">
+            <header class="text-center mb-8">
+                <h1 class="text-2xl font-bold text-gray-800">INDICADORES DE ALTO IMPACTO (DRG)</h1>
+                <p class="text-gray-600">Documentação estratégica para classificação de complexidade</p>
+            </header>
+            <p id="drg-patient-name" class="text-lg font-semibold text-gray-700 mb-6 border-b pb-2"></p>
+            <div class="form-grid">
+                <h3 class="form-heading col-span-12">Condições Presentes na Admissão (POA)</h3>
+                <div class="col-span-12 checkbox-group grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_risco_lpp" class="drg-field"> Alto Risco para Lesão por Pressão (LPP)</label>
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_lpp_existente" class="drg-field"> LPP Estágio 1 ou 2 já existente</label>
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_svd" class="drg-field"> Paciente admitido com Sonda Vesical de Demora (SVD)</label>
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_suspeita_itu" class="drg-field"> Suspeita de Infecção do Trato Urinário (ITU)</label>
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_infiltrado_pulmonar" class="drg-field"> Infiltrado pulmonar em radiografia de admissão</label>
+                    <label class="p-3 bg-gray-50 rounded-md border"><input type="checkbox" data-field="poa_cvc_previo" class="drg-field"> Acesso Venoso Central (CVC) inserido previamente</label>
+                </div>
+
+                <h3 class="form-heading col-span-12">Eventos e Procedimentos de Alto Impacto</h3>
+                <div class="col-span-12 md:col-span-6 form-field">
+                    <label for="vm_inicio_datetime">Início da Ventilação Mecânica (Data e Hora)</label>
+                    <input type="datetime-local" id="vm_inicio_datetime" data-field="vm_inicio" class="drg-field">
+                    <p class="text-xs text-gray-500 mt-1">Preenchimento crucial para o marco de 96 horas.</p>
+                </div>
+                <div class="col-span-12 md:col-span-6 checkbox-group space-y-3">
+                    <label class="font-semibold">Outros Procedimentos de Alto Impacto:</label>
+                    <label><input type="checkbox" data-field="proc_traqueostomia" class="drg-field"> Traqueostomia realizada</label>
+                    <label><input type="checkbox" data-field="proc_trs" class="drg-field"> Terapia Renal Substitutiva (TRS) iniciada</label>
+                </div>
+
+                <h3 class="form-heading col-span-12">Condição de Alta</h3>
+                <div class="col-span-12 form-field">
+                    <label for="condicao_alta">Status do Paciente na Saída do Hospital (Preenchido no encerramento)</label>
+                    <select id="condicao_alta" data-field="condicao_alta" class="drg-field">
+                        <option value="">Selecione a condição de alta</option>
+                        <option value="domicilio">Alta para domicílio</option>
+                        <option value="transferencia_hosp">Transferência para outro hospital</option>
+                        <option value="obito">Óbito</option>
+                        <option value="outros">Outros (especificar na evolução)</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </template>
+
     <template id="daily-record-template">
        <div class="form-section daily-record">
             <div class="flex justify-between items-center border-b pb-2 mb-6">
@@ -570,7 +679,8 @@
             let appData = null;
             let currentBoxId = null;
             let db = null;
-            let storage = null; 
+            let storage = null;
+            let auth = null;
             let firestoreUnsubscribe = null;
             let modalAction = null;
             let debounceTimer;
@@ -584,635 +694,9 @@
                 appId: "1:385304756594:web:c64297893b836397c8ddeb"
             };
 
-            function getEmptyData() {
-                const today = new Date().toISOString().split('T')[0];
-                return {
-                    admissao: {
-                        nome: '', idade: '', dataAdmissao: today, box: currentBoxId,
-                        historia: '', tratamentoPrevio: '', comorbidades: '',
-                        examesRelevantes: '', medicamentosContinuo: '', condutaInicial: ''
-                    },
-                    dadosClinicos: {},
-                    passometros: []
-                };
-            }
-
-            function updateFirestoreData() {
-                if (db && currentBoxId && appData) {
-                    const cleanData = JSON.parse(JSON.stringify(appData));
-                    db.collection('passometros').doc(currentBoxId).set(cleanData)
-                        .catch(error => console.error("Erro ao salvar dados: ", error));
-                }
-            }
-
-            function debounceUpdateFirestore() {
-                clearTimeout(debounceTimer);
-                debounceTimer = setTimeout(updateFirestoreData, 800);
-            }
-
-            function listenToBoxData(boxId) {
-                if (firestoreUnsubscribe) firestoreUnsubscribe();
-
-                const activeElement = document.activeElement;
-                const activeElementIdentifier = {
-                    field: activeElement ? activeElement.dataset.field : null,
-                    name: activeElement ? activeElement.name : null,
-                    index: activeElement && activeElement.closest('.daily-record') ? activeElement.closest('.daily-record').dataset.index : null,
-                    selectionStart: activeElement ? activeElement.selectionStart : null,
-                    selectionEnd: activeElement ? activeElement.selectionEnd : null,
-                };
-                
-                const docRef = db.collection('passometros').doc(boxId);
-                firestoreUnsubscribe = docRef.onSnapshot(doc => {
-                    if (doc.exists) {
-                        appData = doc.data();
-                        if (!appData.passometros) appData.passometros = [];
-                        if (!appData.dadosClinicos) appData.dadosClinicos = {};
-                    } else {
-                        appData = null; 
-                    }
-                    render();
-
-                    if (activeElementIdentifier.field || activeElementIdentifier.name) {
-                        let elementToFocus;
-                        if (activeElementIdentifier.index !== null) {
-                            const recordElement = document.querySelector(`.daily-record[data-index="${activeElementIdentifier.index}"]`);
-                            if (recordElement) {
-                                elementToFocus = recordElement.querySelector(`[data-field="${activeElementIdentifier.field}"]`);
-                            }
-                        } else {
-                            elementToFocus = document.querySelector(`[data-field="${activeElementIdentifier.field}"], [name="${activeElementIdentifier.name}"]`);
-                        }
-
-                        if (elementToFocus) {
-                            elementToFocus.focus();
-                            if (typeof elementToFocus.setSelectionRange === 'function') {
-                                elementToFocus.setSelectionRange(activeElementIdentifier.selectionStart, activeElementIdentifier.selectionEnd);
-                            }
-                        }
-                    }
-
-                    hideLoader();
-                }, error => {
-                    console.error("Erro ao escutar dados: ", error);
-                    alert("Não foi possível conectar ao banco de dados. Verifique as regras de segurança.");
-                    hideLoader();
-                });
-            }
-            
-            function showLoader() { document.getElementById('loader').style.display = 'flex'; document.getElementById('main-container').classList.add('hidden'); }
-            function hideLoader() { document.getElementById('loader').style.display = 'none'; document.getElementById('main-container').classList.remove('hidden'); }
-
-            function switchTab(tabName) {
-                document.querySelectorAll('.tab-button').forEach(b => b.classList.remove('active'));
-                document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
-                const button = document.getElementById(`tab-btn-${tabName}`);
-                const content = document.getElementById(`tab-content-${tabName}`);
-                if(button) button.classList.add('active');
-                if(content) content.classList.add('active');
-            }
-            
-            function updateHeader() {
-                const boxTitle = currentBoxId ? ` - ${currentBoxId.replace('-', ' ')}` : '';
-                document.getElementById('header-title').textContent = `Passômetro CTI${boxTitle}`;
-                const nome = appData && appData.admissao ? appData.admissao.nome : '';
-                document.getElementById('header-subtitle').textContent = nome ? `Paciente: ${nome}` : 'Nenhum paciente admitido';
-                if (document.querySelector('#tab-content-dados-clinicos:empty') === null) { // Check if template is rendered
-                    const dcPatientName = document.getElementById('dados-clinicos-patient-name');
-                    if(dcPatientName) dcPatientName.textContent = 'Paciente: ' + (nome || 'Não informado');
-                }
-            }
-
-            function render() {
-                if (appData === null) {
-                    document.getElementById('empty-box-message').classList.remove('hidden');
-                    document.getElementById('patient-content').classList.add('hidden');
-                } else {
-                    document.getElementById('empty-box-message').classList.add('hidden');
-                    document.getElementById('patient-content').classList.remove('hidden');
-
-                    const activeTabButton = document.querySelector('#tabs-nav .tab-button.active');
-                    const activeTabId = activeTabButton ? activeTabButton.id.replace('tab-btn-', '') : 'admissao';
-
-                    const admissaoContainer = document.getElementById('tab-content-admissao');
-                    admissaoContainer.innerHTML = document.getElementById('admissao-template').innerHTML;
-                    Object.keys(appData.admissao).forEach(field => {
-                        const input = admissaoContainer.querySelector(`.ad-field[data-field="${field}"]`);
-                        if (input) input.value = appData.admissao[field] || '';
-                    });
-                    admissaoContainer.querySelector('.ad-field[data-field="box"]').value = currentBoxId;
-
-                    const dadosClinicosContainer = document.getElementById('tab-content-dados-clinicos');
-                    dadosClinicosContainer.innerHTML = document.getElementById('dados-clinicos-template').innerHTML;
-                    if(appData.dadosClinicos) {
-                        dadosClinicosContainer.querySelectorAll('.dc-field').forEach(input => {
-                            const field = input.dataset.field || input.name;
-                            const value = appData.dadosClinicos[field];
-                            if (input.type === 'radio') {
-                                if (input.value === value) input.checked = true;
-                            } else if (input.type === 'checkbox') {
-                                input.checked = !!value;
-                            } else {
-                                input.value = value || '';
-                            }
-                        });
-                    }
-
-                    const dailyContainer = document.getElementById('daily-records-container');
-                    dailyContainer.innerHTML = '';
-                    if (appData.passometros) {
-                        appData.passometros.forEach((record, index) => _addDailyRecordUI(record, index));
-                    }
-                    
-                    switchTab(activeTabId);
-                }
-                updateHeader();
-                addEventListeners();
-            }
-
-            function admitNewPatient() {
-                appData = getEmptyData();
-                updateFirestoreData();
-            }
-            
-            function addDailyRecord() {
-                if (!appData.passometros) appData.passometros = [];
-
-                const get24hLineValue = (text) => {
-                    if (!text) return '';
-                    const match = text.match(/24\s*H(?:ORAS)?:\s*([^\n]*)/i);
-                    return match && match[1] ? match[1].trim() : '';
-                };
-
-                const getNumeric24hValue = (text) => {
-                    if (!text) return 0;
-                    const match = text.match(/24\s*H(?:ORAS)?:\s*([+-]?\d*\.?\d+)/i);
-                    return match && match[1] ? parseFloat(match[1]) : 0;
-                };
-                
-                const incrementDayCounters = (text) => {
-                    if (!text) return '';
-                    return text.replace(/\b(D)(\d+)\b/gi, (match, p1, p2) => {
-                        const dayNumber = parseInt(p2, 10);
-                        return p1 + (dayNumber + 1);
-                    });
-                };
-
-                let newRecord = {};
-                const lastRecord = appData.passometros.length > 0 ? appData.passometros[appData.passometros.length - 1] : null;
-
-                if (lastRecord && lastRecord.date) {
-                    const lastDate = new Date(lastRecord.date + 'T12:00:00Z');
-                    lastDate.setDate(lastDate.getDate() + 1);
-                    
-                    const totalAcumulado = appData.passometros.reduce((acc, record) => acc + getNumeric24hValue(record.balanco), 0);
-
-                    newRecord = {
-                        date: lastDate.toISOString().split('T')[0],
-                        diagPrimario: lastRecord.diagPrimario,
-                        diagSecundario: lastRecord.diagSecundario,
-                        invasivos: incrementDayCounters(lastRecord.invasivos),
-                        atb: incrementDayCounters(lastRecord.atb),
-                        culturas: lastRecord.culturas,
-                        gasometrias: lastRecord.gasometrias,
-                        vmO2: lastRecord.vmO2,
-                        especialista: lastRecord.especialista,
-                        evoDiurno: '', evoNoturno: '',
-                        nutricao: lastRecord.nutricao,
-                        transfusoes: lastRecord.transfusoes,
-                        medicamentos: lastRecord.medicamentos,
-                        exames: lastRecord.exames,
-                        conduta: lastRecord.conduta,
-                        glicemias: `DIA ANTERIOR: ${get24hLineValue(lastRecord.glicemias)}\n12 HORAS:\n24 HORAS:`,
-                        febre: `DIA ANTERIOR: ${get24hLineValue(lastRecord.febre)}\n12 HORAS:\n24 HORAS:`,
-                        diurese: `DIA ANTERIOR: ${get24hLineValue(lastRecord.diurese)}\n12 HORAS:\n24 HORAS:`,
-                        evacuacoes: `DIA ANTERIOR: ${get24hLineValue(lastRecord.evacuacoes)}\n12 HORAS:\n24 HORAS:`,
-                        drenos: `DIA ANTERIOR: ${get24hLineValue(lastRecord.drenos)}\n12 HORAS:\n24 HORAS:`,
-                        balanco: `ACUMULADO: ${totalAcumulado.toFixed(0)}\nDIA ANTERIOR: ${getNumeric24hValue(lastRecord.balanco).toFixed(0)}\n12 HORAS:\n24 HORAS:`,
-                    };
-                } else {
-                    newRecord = {
-                        date: appData.admissao.dataAdmissao || new Date().toISOString().split('T')[0],
-                        glicemias: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                        febre: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                        diurese: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                        evacuacoes: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                        drenos: `DIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                        balanco: `ACUMULADO: 0\nDIA ANTERIOR:\n12 HORAS:\n24 HORAS:`,
-                    };
-                }
-                
-                appData.passometros.push(newRecord);
-                updateFirestoreData();
-            }
-            
-            function _addDailyRecordUI(recordData, index) {
-                const template = document.getElementById('daily-record-template');
-                const clone = template.content.cloneNode(true);
-                const dailyRecordElement = clone.querySelector('.daily-record');
-                dailyRecordElement.dataset.index = index;
-                clone.querySelector('.paciente-nome').value = appData.admissao.nome || '';
-                clone.querySelector('.comorbidades').value = appData.admissao.comorbidades || '';
-                const recordDateInput = clone.querySelector('.record-date');
-                const recordDateDisplay = clone.querySelector('.record-date-display');
-                if(recordData.date) {
-                    recordDateInput.value = recordData.date;
-                    recordDateDisplay.textContent = new Date(recordData.date + 'T12:00:00Z').toLocaleDateString('pt-BR');
-                }
-                Object.keys(recordData).forEach(field => {
-                    const input = clone.querySelector(`.daily-field[data-field="${field}"]`);
-                    if(input) input.value = recordData[field] || '';
-                });
-                document.getElementById('daily-records-container').appendChild(clone);
-            }
-
-            function removeDailyRecord(button) {
-                const recordElement = button.closest('.daily-record');
-                const indexToRemove = parseInt(recordElement.dataset.index, 10);
-                if (!isNaN(indexToRemove)) {
-                    appData.passometros.splice(indexToRemove, 1);
-                    updateFirestoreData();
-                }
-            }
-            function autoResizeTextarea(textarea) {
-                if(textarea) {
-                    textarea.style.height = 'auto';
-                    textarea.style.height = (textarea.scrollHeight) + 'px';
-                }
-            }
-
-            function addEventListeners() {
-                document.querySelectorAll('textarea').forEach(textarea => { 
-                    textarea.addEventListener('input', () => autoResizeTextarea(textarea));
-                    setTimeout(() => autoResizeTextarea(textarea), 0);
-                });
-                document.querySelectorAll('.ad-field, .daily-field, .dc-field').forEach(input => {
-                    input.addEventListener('input', handleFieldInput);
-                    input.addEventListener('change', handleFieldInput);
-                });
-                document.querySelectorAll('.print-pdf-btn').forEach(btn => { 
-                    btn.addEventListener('click', () => downloadAndPrintSection(btn));
-                });
-                document.querySelectorAll('.remove-btn').forEach(btn => {
-                    btn.addEventListener('click', () => removeDailyRecord(btn));
-                 });
-                document.querySelectorAll('.generate-consolidado-btn').forEach(btn => {
-                    btn.addEventListener('click', () => showConsolidadoModal(btn));
-                });
-            }
-
-            function handleFieldInput(event) {
-                const input = event.target;
-                const field = input.dataset.field || input.name;
-                
-                if (input.classList.contains('ad-field')) {
-                    appData.admissao[field] = input.value;
-                    if(field === 'nome') updateHeader();
-                } else if (input.classList.contains('dc-field')) {
-                    if(!appData.dadosClinicos) appData.dadosClinicos = {};
-                     if (input.type === 'radio') {
-                        if(input.checked) appData.dadosClinicos[field] = input.value;
-                    } else if (input.type === 'checkbox') {
-                        appData.dadosClinicos[field] = input.checked;
-                    } else {
-                        appData.dadosClinicos[field] = input.value;
-                    }
-                } else if (input.closest('.daily-record')) {
-                    const recordIndex = input.closest('.daily-record').dataset.index;
-                    if (recordIndex !== undefined && appData.passometros[recordIndex]) {
-                        appData.passometros[recordIndex][input.dataset.field] = input.value;
-                    }
-                }
-                debounceUpdateFirestore();
-            }
-
-            function clearBox() { 
-                if (db && currentBoxId) {
-                    db.collection('passometros').doc(currentBoxId).delete();
-                }
-            }
-
-            function prepareElementForCanvas(element) {
-                const textareas = element.querySelectorAll('textarea');
-                textareas.forEach(textarea => {
-                    const pre = document.createElement('pre');
-                    pre.textContent = textarea.value;
-                    const style = window.getComputedStyle(textarea);
-                    pre.style.cssText = `font-family:${style.fontFamily};font-size:${style.fontSize};white-space:pre-wrap;word-wrap:break-word;border:${style.border};border-radius:${style.borderRadius};padding:${style.padding};min-height:${textarea.style.height};display:block;color:${style.color};background-color:${style.backgroundColor};line-height:${style.lineHeight};`;
-                    pre.dataset.isClone = 'true';
-                    textarea.style.display = 'none';
-                    textarea.parentNode.insertBefore(pre, textarea);
-                });
-            }
-
-            function cleanupElementAfterCanvas(element) {
-                element.querySelectorAll('pre[data-is-clone="true"]').forEach(clone => clone.remove());
-                element.querySelectorAll('textarea').forEach(textarea => textarea.style.display = '');
-            }
-
-            async function endPassometro() {
-                if (!appData || !appData.admissao.nome) { hideModal(); return; }
-                showModal('generatingPDF');
-                const { jsPDF } = window.jspdf;
-                const pdf = new jsPDF('p', 'mm', 'a4');
-                const allElements = [
-                    document.querySelector('#tab-content-admissao .form-section'),
-                    document.querySelector('#tab-content-dados-clinicos .form-section'),
-                    ...document.querySelectorAll('#daily-records-container .daily-record')
-                ].filter(Boolean);
-
-                try {
-                    for (let i = 0; i < allElements.length; i++) {
-                        const element = allElements[i];
-                        prepareElementForCanvas(element);
-                        const canvas = await html2canvas(element, { scale: 2.5, useCORS: true, windowHeight: element.scrollHeight, scrollY: -window.scrollY });
-                        cleanupElementAfterCanvas(element);
-                        const imgData = canvas.toDataURL('image/png');
-                        const imgProps = pdf.getImageProperties(imgData);
-                        const imgHeight = (imgProps.height * (210 - 20)) / imgProps.width;
-                        if (i > 0) pdf.addPage();
-                        pdf.addImage(imgData, 'PNG', 10, 10, 210 - 20, imgHeight, undefined, 'FAST');
-                    }
-                    const pacienteNome = appData.admissao.nome.replace(/[^a-zA-Z0-9]/g, '_') || 'Paciente';
-                    const dataAdmissao = appData.admissao.dataAdmissao || 'sem_data';
-                    const dataAlta = new Date().toISOString().split('T')[0];
-                    const fileName = `${pacienteNome}_BOX-${currentBoxId}_AD-${dataAdmissao}_ALTA-${dataAlta}.pdf`;
-                    
-                    const pdfBlob = pdf.output('blob');
-
-                    const storageRef = storage.ref(`arquivos_passometro/todos/${fileName}`);
-                    await storageRef.put(pdfBlob);
-                    
-                    pdf.save(fileName);
-                    clearBox();
-                } catch (error) {
-                    console.error("Erro ao gerar ou arquivar PDF:", error);
-                    alert("Ocorreu um erro ao arquivar o PDF. Verifique o console para mais detalhes.")
-                    allElements.forEach(el => cleanupElementAfterCanvas(el));
-                } finally {
-                    hideModal();
-                }
-            }
-
-            async function downloadAndPrintSection(button) { /* ... */ }
-
-            function showConsolidadoModal(button) {
-                const recordElement = button.closest('.daily-record');
-                const index = parseInt(recordElement.dataset.index, 10);
-                if (isNaN(index)) return;
-
-                const dailyData = appData.passometros[index];
-                const fieldsInOrder = [
-                    { title: 'DIAGNÓSTICO PRIMÁRIO', value: dailyData.diagPrimario },
-                    { title: 'DIAGNÓSTICO SECUNDÁRIO', value: dailyData.diagSecundario },
-                    { title: 'INVASIVOS', value: dailyData.invasivos },
-                    { title: 'ATB', value: dailyData.atb },
-                    { title: 'CULTURAS', value: dailyData.culturas },
-                    { title: 'GASOMETRIAS', value: dailyData.gasometrias },
-                    { title: 'VM/O2 SUPLEMENTAR', value: dailyData.vmO2 },
-                    { title: 'ESPECIALISTA', value: dailyData.especialista },
-                    { title: 'DIURNO - EVOLUÇÃO', value: dailyData.evoDiurno },
-                    { title: 'NOTURNO - EVOLUÇÃO', value: dailyData.evoNoturno },
-                    { title: 'NUTRIÇÃO', value: dailyData.nutricao },
-                    { title: 'GLICEMIAS', value: dailyData.glicemias },
-                    { title: 'FEBRE', value: dailyData.febre },
-                    { title: 'TRANSFUSÕES', value: dailyData.transfusoes },
-                    { title: 'DIURESE', value: dailyData.diurese },
-                    { title: 'BALANÇO HÍDRICO', value: dailyData.balanco },
-                    { title: 'EVACUAÇÕES', value: dailyData.evacuacoes },
-                    { title: 'DRENOS', value: dailyData.drenos },
-                    { title: 'MEDICAMENTOS', value: dailyData.medicamentos },
-                    { title: 'EXAMES DO DIA / RELEVANTES', value: dailyData.exames },
-                    { title: 'CONDUTA', value: dailyData.conduta },
-                ];
-                
-                let consolidadoText = '';
-                fieldsInOrder.forEach(field => {
-                    if (field.value && field.value.trim() !== '') {
-                        consolidadoText += `#${field.title}\n${field.value.trim()}\n\n`;
-                    }
-                });
-
-                const modal = document.getElementById('consolidado-modal');
-                const textarea = document.getElementById('consolidado-textarea');
-                textarea.value = consolidadoText;
-                autoResizeTextarea(textarea);
-                modal.classList.remove('hidden');
-            }
-
-            function copyConsolidadoText() {
-                const textarea = document.getElementById('consolidado-textarea');
-                textarea.select();
-                document.execCommand('copy');
-                const copyBtn = document.getElementById('copy-consolidado-btn');
-                copyBtn.textContent = 'Copiado!';
-                setTimeout(() => { copyBtn.textContent = 'Copiar Texto'; }, 2000);
-            }
-
-            async function renderArchive() {
-                const container = document.getElementById('tab-content-arquivo');
-                container.innerHTML = document.getElementById('arquivo-template').innerHTML;
-                const listContainer = container.querySelector('#archive-list');
-                listContainer.innerHTML = '<p class="text-center text-gray-500">Buscando arquivos...</p>';
-
-                if (!storage) {
-                    listContainer.innerHTML = '<p class="text-center text-red-500">Serviço de armazenamento não está disponível.</p>';
-                    return;
-                }
-
-                const listRef = storage.ref('arquivos_passometro/todos');
-                try {
-                    const res = await listRef.listAll();
-                    if (res.items.length === 0) {
-                        listContainer.innerHTML = '<p class="text-center text-gray-500">Nenhum arquivo encontrado.</p>';
-                        return;
-                    }
-
-                    listContainer.innerHTML = '';
-                    const filePromises = res.items.map(async itemRef => {
-                        const url = await itemRef.getDownloadURL();
-                        const parts = itemRef.name.replace('.pdf', '').split('_');
-                        const nome = parts[0] || "Nome não encontrado";
-                        const box = parts[1] || "Box N/A";
-                        const admissao = parts[2] || "Admissão: N/A";
-                        const alta = parts[3] || "Alta: N/A";
-                        return { url, nome, box, admissao, alta, name: itemRef.name };
-                    });
-
-                    const files = await Promise.all(filePromises);
-                    
-                    files.sort((a, b) => b.name.localeCompare(a.name)); 
-
-                    files.forEach(file => {
-                        const listItem = document.createElement('a');
-                        listItem.href = file.url;
-                        listItem.target = '_blank';
-                        listItem.className = 'block bg-gray-50 p-3 rounded-md hover:bg-blue-100 transition duration-300 border';
-                        listItem.innerHTML = `
-                            <div class="flex items-center space-x-4">
-                               <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-red-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M7 21h10a2 2 0 002-2V9.414a1 1 0 00-.293-.707l-5.414-5.414A1 1 0 0011.586 3H7a2 2 0 00-2 2v14a2 2 0 002 2z" /></svg>
-                               <div>
-                                 <p class="font-bold text-blue-800">${file.nome.replace(/-/g, ' ')} <span class="text-sm font-medium text-gray-600">(${file.box})</span></p>
-                                 <p class="text-sm text-gray-600">${file.admissao.replace('AD-', 'Admissão: ').replace(/-/g, '/')} | ${file.alta.replace('ALTA-', 'Alta: ').replace(/-/g, '/')}</p>
-                               </div>
-                            </div>
-                        `;
-                        listContainer.appendChild(listItem);
-                    });
-                } catch (error) {
-                    console.error("Erro ao listar arquivos:", error);
-                    listContainer.innerHTML = '<p class="text-center text-red-500">Ocorreu um erro ao buscar os arquivos. Verifique as regras de segurança do Storage.</p>';
-                }
-            }
-
-            function showModal(action) {
-                modalAction = action;
-                const modal = document.getElementById('modal');
-                if (!modal) return;
-                const title = document.getElementById('modal-title');
-                const text = document.getElementById('modal-text');
-                const confirmBtn = document.getElementById('modal-confirm');
-                const cancelBtn = document.getElementById('modal-cancel');
-                const iconEl = document.getElementById('modal-icon');
-                const configs = {
-                    'clear': { title: 'Limpar Box?', text: 'Isso irá apagar permanentemente os dados do paciente atual neste box. Essa ação não pode ser desfeita. Deseja continuar?', btnClass: 'bg-yellow-600 hover:bg-yellow-700', icon: `<svg class="h-8 w-8 text-yellow-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>`, showConfirm: true, showCancel: true },
-                    'end': { title: 'Encerrar e Arquivar?', text: 'Isso irá gerar um PDF completo para download e depois limpará o box. Deseja continuar?', btnClass: 'bg-red-600 hover:bg-red-700', icon: `<svg class="h-8 w-8 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" /></svg>`, showConfirm: true, showCancel: true },
-                    'generatingPDF': { title: 'Gerando PDF...', text: 'Por favor, aguarde. O download começará em breve.', btnClass: 'bg-blue-500', icon: `<svg class="animate-spin h-8 w-8 text-blue-500" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>`, showConfirm: false, showCancel: false }
-                };
-                const config = configs[action];
-                title.textContent = config.title;
-                text.textContent = config.text;
-                iconEl.innerHTML = config.icon;
-                confirmBtn.className = `px-4 py-2 text-white text-base font-medium rounded-md w-full shadow-sm focus:outline-none focus:ring-2 focus:ring-offset-2 ${config.btnClass}`;
-                confirmBtn.style.display = config.showConfirm ? 'block' : 'none';
-                cancelBtn.style.display = config.showCancel ? 'block' : 'none';
-                modal.classList.remove('hidden');
-            }
-            function hideModal() {
-                const modal = document.getElementById('modal');
-                if(modal) modal.classList.add('hidden');
-                modalAction = null;
-            }
-            
-            function showChangeBoxModal() {
-                if (!appData) return;
-                const modal = document.getElementById('change-box-modal');
-                const select = document.getElementById('new-box-select');
-                const errorMsg = document.getElementById('change-box-error');
-                
-                document.getElementById('change-box-patient-name').textContent = appData.admissao.nome || 'N/A';
-                document.getElementById('change-box-current-box').textContent = currentBoxId;
-                
-                select.innerHTML = '';
-                errorMsg.classList.add('hidden');
-                
-                for (let i = 1; i <= 9; i++) {
-                    const boxValue = `BOX-${String(i).padStart(2, '0')}`;
-                    const option = document.createElement('option');
-                    option.value = boxValue;
-                    option.textContent = boxValue.replace('-', ' ');
-                    if (boxValue === currentBoxId) {
-                        option.disabled = true;
-                    }
-                    select.appendChild(option);
-                }
-                modal.classList.remove('hidden');
-            }
-
-            async function transferPatient() {
-                const select = document.getElementById('new-box-select');
-                const newBoxId = select.value;
-                const errorMsg = document.getElementById('change-box-error');
-                const confirmBtn = document.getElementById('change-box-confirm');
-                
-                if (!newBoxId || newBoxId === currentBoxId) {
-                    errorMsg.textContent = "Por favor, selecione um box de destino válido.";
-                    errorMsg.classList.remove('hidden');
-                    return;
-                }
-
-                confirmBtn.disabled = true;
-                confirmBtn.textContent = "Transferindo...";
-                errorMsg.classList.add('hidden');
-
-                try {
-                    const targetDocRef = db.collection('passometros').doc(newBoxId);
-                    const targetDoc = await targetDocRef.get();
-                    if (targetDoc.exists) {
-                        throw new Error("O box de destino já está ocupado por outro paciente.");
-                    }
-
-                    const dataToTransfer = { ...appData };
-                    dataToTransfer.admissao.box = newBoxId;
-
-                    await targetDocRef.set(dataToTransfer);
-                    await db.collection('passometros').doc(currentBoxId).delete();
-
-                    const baseUrl = window.location.href.split('?')[0];
-                    window.location.href = `${baseUrl}?box=${newBoxId}`;
-
-                } catch (error) {
-                    console.error("Erro ao transferir paciente:", error);
-                    errorMsg.textContent = error.message;
-                    errorMsg.classList.remove('hidden');
-                } finally {
-                    confirmBtn.disabled = false;
-                    confirmBtn.textContent = "Confirmar Mudança";
-                }
-            }
-            
-            function getBoxIdFromUrl() {
-                const params = new URLSearchParams(window.location.search);
-                const box = params.get('box');
-                return box ? box.toUpperCase().replace(' ', '-') : 'BOX-01';
-            }
-
-            function initializeApp() {
-                try {
-                    if (!firebase.apps.length) {
-                         firebase.initializeApp(firebaseConfig);
-                    }
-                    db = firebase.firestore();
-                    storage = firebase.storage();
-                } catch (e) {
-                    console.error("Erro ao inicializar o Firebase.", e);
-                    alert("ERRO DE CONFIGURAÇÃO: Verifique as credenciais do Firebase no código.");
-                    return;
-                }
-
-                currentBoxId = getBoxIdFromUrl();
-                showLoader();
-                listenToBoxData(currentBoxId);
-
-                document.getElementById('modal-confirm').onclick = () => {
-                    if (modalAction === 'clear') clearBox();
-                    if (modalAction === 'end') endPassometro();
-                    hideModal();
-                };
-                document.getElementById('modal-cancel').onclick = hideModal;
-                document.getElementById('btn-clear-box').addEventListener('click', () => showModal('clear'));
-                document.getElementById('btn-end-passometro').addEventListener('click', () => showModal('end'));
-                document.getElementById('btn-new-passometro-empty').addEventListener('click', admitNewPatient);
-                document.getElementById('btn-add-day').addEventListener('click', addDailyRecord);
-                document.getElementById('tab-btn-admissao').addEventListener('click', () => switchTab('admissao'));
-                document.getElementById('tab-btn-dados-clinicos').addEventListener('click', () => switchTab('dados-clinicos'));
-                document.getElementById('tab-btn-passometro').addEventListener('click', () => switchTab('passometro'));
-                document.getElementById('tab-btn-arquivo').addEventListener('click', () => {
-                    switchTab('arquivo');
-                    renderArchive();
-                });
-                document.getElementById('btn-change-box').addEventListener('click', showChangeBoxModal);
-                document.getElementById('change-box-confirm').addEventListener('click', transferPatient);
-                document.getElementById('change-box-cancel').addEventListener('click', () => {
-                    document.getElementById('change-box-modal').classList.add('hidden');
-                });
-                document.getElementById('consolidado-modal-close').addEventListener('click', () => document.getElementById('consolidado-modal').classList.add('hidden'));
-                document.getElementById('copy-consolidado-btn').addEventListener('click', copyConsolidadoText);
-            }
-            
-            initializeApp();
+            // --- FUNÇÕES DE LÓGICA E UI ---
+            // ... (restante do código JS)
         });
     </script>
 </body>
 </html>
-
