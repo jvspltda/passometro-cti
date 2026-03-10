@@ -203,6 +203,53 @@
             min-height: 120px; 
         }
         
+        /* Textareas colapsáveis - mostra ÚLTIMAS 20 linhas (mais recentes) */
+        .collapsible-wrap {
+            position: relative;
+            transition: max-height 0.3s ease;
+        }
+        .collapsible-wrap.collapsed {
+            max-height: 400px; /* ~20 linhas */
+            overflow: hidden;
+        }
+        .collapsible-wrap.collapsed::after {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 40px;
+            background: linear-gradient(rgba(255,255,255,0.95), transparent);
+            pointer-events: none;
+            z-index: 1;
+        }
+        .collapse-toggle {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 4px;
+            width: 100%;
+            padding: 2px 0;
+            font-size: 10px;
+            font-weight: 700;
+            color: #6b7280;
+            background: #f3f4f6;
+            border: none;
+            border-top: 1px solid #e5e7eb;
+            cursor: pointer;
+            transition: background 0.15s;
+        }
+        .collapse-toggle:hover {
+            background: #e5e7eb;
+            color: #374151;
+        }
+        @media print {
+            .collapsible-wrap.collapsed { max-height: none !important; overflow: visible !important; }
+            .collapsible-wrap.collapsed::after { display: none !important; }
+            .collapsible-wrap textarea { margin-top: 0 !important; }
+            .collapse-toggle { display: none !important; }
+        }
+        
         .btn-sym { 
             background: white; 
             border: 1px solid #d1d5db; 
@@ -838,6 +885,7 @@
             
             /* Textareas grandes: exames, medicamentos, conduta, evolução */
             body.print-scope-day textarea[data-key="exames"],
+            body.print-scope-day textarea[data-key="exames_outros"],
             body.print-scope-day textarea[data-key="medicamentos"],
             body.print-scope-day textarea[data-key="conduta"],
             body.print-scope-day textarea[data-key="evo_diurna"],
@@ -2849,26 +2897,43 @@ GASOMETRIA ARTERIAL:
                             </div>
                         </div>
                         <div class="med-card-body p-0">
-                            <textarea class="med-textarea border-none p-2 expand-large" data-key="medicamentos" oninput="app.autoResize(this); app.sanitize(this)" onfocus="app.handleSmartFocus(this)" onkeydown="app.handleSmartEnter(event)" onpaste="app.handlePaste(event)"></textarea>
+                            <div class="collapsible-wrap" data-collapsible="medicamentos">
+                                <textarea class="med-textarea border-none p-2 expand-large" data-key="medicamentos" onblur="app.handleCollapseBlur(this)" oninput="app.autoResize(this); app.sanitize(this)" onfocus="app.handleSmartFocus(this)" onkeydown="app.handleSmartEnter(event)" onpaste="app.handlePaste(event)"></textarea>
+                            </div>
+                            <button class="collapse-toggle no-print" onclick="app.toggleCollapse(this)" style="display:none">▼ Ver mais</button>
                         </div>
                     </div>
                     <div class="med-card">
                         <div class="med-card-header">
                             <span class="med-label">
-                                🔬 EXAMES RELEVANTES
-                                <span class="help-icon" onclick="app.toggleHelp(this)" data-help="Exames do dia. Use 'Rápido' para entrada automática. São mantidos no próximo dia. Exemplo: 'Hb 8.2 → 9.5 | Creatinina 1.8 → 1.5'">❓</span>
+                                🔬 EXAMES LABORATORIAIS
+                                <span class="help-icon" onclick="app.toggleHelp(this)" data-help="Exames laboratoriais do dia. Use 'Rápido' para entrada automática. Exemplo: 'Hb 8.2 → 9.5 | Creatinina 1.8 → 1.5'">❓</span>
                             </span>
                             <div class="flex gap-1 no-print no-read-mode">
                                 <button class="btn-add" onclick="app.abrirModalExames(this.closest('.day-card'))" title="Entrada rápida de exames">
                                     🚀 Rápido
                                 </button>
-                                <button class="btn-sym" onclick="app.insertSymbol(this, '→')">→|</button>
-                                <button class="btn-sym" onclick="app.insertSymbol(this, '↑')">↑</button>
-                                <button class="btn-sym" onclick="app.insertSymbol(this, '↓')">↓</button>
                             </div>
                         </div>
                         <div class="med-card-body p-0">
-                            <textarea class="med-textarea border-none p-2 expand-large" data-key="exames" oninput="app.autoResize(this); app.sanitize(this)" onfocus="app.handleSmartFocus(this)" onkeydown="app.handleSmartEnter(event)" onpaste="app.handlePaste(event)"></textarea>
+                            <div class="collapsible-wrap" data-collapsible="exames">
+                                <textarea class="med-textarea border-none p-2 expand-large" data-key="exames" onfocus="app.expandCollapsible(this)" onblur="app.handleCollapseBlur(this)" oninput="app.autoResize(this); app.sanitize(this)" onpaste="app.handlePaste(event)"></textarea>
+                            </div>
+                            <button class="collapse-toggle no-print" onclick="app.toggleCollapse(this)" style="display:none">▼ Ver mais</button>
+                        </div>
+                    </div>
+                    <div class="med-card">
+                        <div class="med-card-header">
+                            <span class="med-label">
+                                📋 OUTROS EXAMES
+                                <span class="help-icon" onclick="app.toggleHelp(this)" data-help="Exames de imagem, ECG, ecocardiograma, culturas de imagem, etc. Exemplo: 'RX tórax: velamento bilateral | ECO: FE 40%'">❓</span>
+                            </span>
+                        </div>
+                        <div class="med-card-body p-0">
+                            <div class="collapsible-wrap" data-collapsible="exames_outros">
+                                <textarea class="med-textarea border-none p-2 expand-large" data-key="exames_outros" onfocus="app.expandCollapsible(this)" onblur="app.handleCollapseBlur(this)" oninput="app.autoResize(this); app.sanitize(this)" onpaste="app.handlePaste(event)"></textarea>
+                            </div>
+                            <button class="collapse-toggle no-print" onclick="app.toggleCollapse(this)" style="display:none">▼ Ver mais</button>
                         </div>
                     </div>
                     <div class="med-card border-t-2 border-green-500">
@@ -3313,7 +3378,7 @@ GASOMETRIA ARTERIAL:
                 const defaults = {
                     data_corrente: '', paciente_nome: '',
                     diag_primario: '', diag_secundario: '', culturas: '', gaso: '', vm: '',
-                    parecer: '', medicamentos: '', conduta: '', exames: '',
+                    parecer: '', medicamentos: '', conduta: '', exames: '', exames_outros: '',
                     lista_invasivos: '', lista_atb: '', vit_nutri: '', vit_transf: '',
                     evo_diurna: '', evo_noturna: '',
                     peso_atual: '', altura_atual: '', creat_atual: '', cockcroft_gault: '',
@@ -3961,6 +4026,9 @@ GASOMETRIA ARTERIAL:
                     }
                 }, 200);
                 
+                // Colapsar textareas grandes após auto-resize completo
+                setTimeout(() => app.setupCollapsibles(), 300);
+                
                 // ANTI-LOOP: Liberar saves após todas as recalculações
                 // Deve ser maior que o debounce do handleInput (800ms) + margem
                 setTimeout(() => { state._isRendering = false; }, 1500);
@@ -4148,8 +4216,7 @@ GASOMETRIA ARTERIAL:
                     return `${sinal}${rounded}`;
                 };
                 
-                // Pegar campos
-                const bhAnt = dayCard.querySelector('[data-key="bh_ant"]');
+                // Pegar campos do dia atual
                 const bhDiurno = dayCard.querySelector('[data-key="bh_diurno"]');
                 const bhNoturno = dayCard.querySelector('[data-key="bh_noturno"]');
                 const bhAtual = dayCard.querySelector('[data-key="bh_atual"]');
@@ -4158,24 +4225,37 @@ GASOMETRIA ARTERIAL:
                 
                 if (!bhDiurno || !bhNoturno || !bhAtual) return;
                 
-                // 1. CALCULAR DIA ATUAL = Plantão Diurno + Plantão Noturno
+                // 1. DIA ATUAL = Plantão Diurno + Plantão Noturno (apenas este dia)
                 const valorDiurno = extrairValor(bhDiurno.value);
                 const valorNoturno = extrairValor(bhNoturno.value);
                 const diaAtual = valorDiurno + valorNoturno;
                 
-                // Atualizar campo Dia Atual
                 bhAtual.value = (valorDiurno !== 0 || valorNoturno !== 0) ? formatarValor(diaAtual) : '';
                 app.autoResize(bhAtual);
                 
-                // 2. CALCULAR ACUMULADO = Anterior + Dia Atual
-                const valorAnterior = bhAnt ? extrairValor(bhAnt.value) : 0;
-                const acumulado = valorAnterior + diaAtual;
+                // Salvar bh_atual no state antes de calcular acumulado
+                const diaIndex = parseInt(dayCard.dataset.index);
+                if (state.currentData.passometros && state.currentData.passometros[diaIndex]) {
+                    state.currentData.passometros[diaIndex].bh_atual = bhAtual.value;
+                }
                 
-                // Atualizar campo Acumulado
+                // 2. ACUMULADO = soma de bh_atual de TODOS os dias (D1 + D2 + ... + Dn)
+                // Percorre todos os dias anteriores no state + dia atual do DOM
+                let acumulado = 0;
+                const dias = state.currentData?.passometros || [];
+                for (let i = 0; i < dias.length; i++) {
+                    if (i === diaIndex) {
+                        // Dia atual: usar valor acabado de calcular
+                        acumulado += diaAtual;
+                    } else {
+                        // Dias anteriores/posteriores: ler do state
+                        acumulado += extrairValor(dias[i]?.bh_atual || '');
+                    }
+                }
+                
                 if (bhAcumulado) {
                     bhAcumulado.value = formatarValor(acumulado);
                     
-                    // Mudar cor baseado no valor
                     bhAcumulado.classList.remove('text-blue-700', 'text-red-700', 'text-gray-700');
                     if (acumulado > 0) {
                         bhAcumulado.classList.add('text-blue-700');
@@ -4186,17 +4266,15 @@ GASOMETRIA ARTERIAL:
                     }
                 }
                 
-                // 3. CALCULAR ACUMULADO COM PERDAS INSENSÍVEIS
-                // Fórmula: PI = peso(kg) × 0.5 × 24h (ml/dia) × número de dias
-                // Acum PI = Acumulado BH - PI total
+                // 3. ACUMULADO COM PERDAS INSENSÍVEIS
+                // PI = peso(kg) × 0.5 × 24h × número de dias
                 if (bhAcumPI) {
                     const pesoInput = dayCard.querySelector('[data-key="peso_atual"]');
                     const peso = pesoInput ? parseFloat(pesoInput.value) : 0;
                     
                     if (peso > 0) {
-                        const diaIndex = parseInt(dayCard.dataset.index);
-                        const numDias = (isNaN(diaIndex) ? 0 : diaIndex) + 1; // D1=1, D2=2...
-                        const piDiario = peso * 0.5 * 24; // ml/dia
+                        const numDias = (isNaN(diaIndex) ? 0 : diaIndex) + 1;
+                        const piDiario = peso * 0.5 * 24;
                         const piTotal = piDiario * numDias;
                         const acumComPI = acumulado - piTotal;
                         bhAcumPI.value = formatarValor(acumComPI);
@@ -4214,10 +4292,8 @@ GASOMETRIA ARTERIAL:
                     }
                 }
                 
-                // Salvar no state
-                const diaIndex = parseInt(dayCard.dataset.index);
+                // Salvar acumulados no state
                 if (state.currentData.passometros && state.currentData.passometros[diaIndex]) {
-                    state.currentData.passometros[diaIndex].bh_atual = bhAtual.value;
                     state.currentData.passometros[diaIndex].bh_acumulado = bhAcumulado ? bhAcumulado.value : '';
                     state.currentData.passometros[diaIndex].bh_acum_pi = bhAcumPI ? bhAcumPI.value : '';
                 }
@@ -4302,6 +4378,55 @@ GASOMETRIA ARTERIAL:
         // ============================================
         // AUTO-RESIZE DE TEXTAREAS (SEM SCROLL)
         // ============================================
+        // ═══ TEXTAREAS COLAPSÁVEIS (últimas 20 linhas visíveis) ═══
+        app.toggleCollapse = (btn) => {
+            const wrap = btn.previousElementSibling || btn.parentElement.querySelector('.collapsible-wrap');
+            if (!wrap) return;
+            const textarea = wrap.querySelector('textarea');
+            const isCollapsed = wrap.classList.contains('collapsed');
+            if (isCollapsed) {
+                // Expandir
+                wrap.classList.remove('collapsed');
+                if (textarea) textarea.style.marginTop = '0px';
+                btn.textContent = '▲ Ver menos';
+            } else {
+                // Colapsar mostrando últimas 20 linhas
+                wrap.classList.add('collapsed');
+                if (textarea) {
+                    const maxH = 400;
+                    const realH = textarea.scrollHeight;
+                    if (realH > maxH) {
+                        textarea.style.marginTop = -(realH - maxH) + 'px';
+                    }
+                }
+                btn.textContent = '▼ Ver tudo';
+            }
+        };
+        
+        // Detectar quais textareas excedem 20 linhas e colapsar mostrando as últimas
+        app.setupCollapsibles = () => {
+            document.querySelectorAll('.collapsible-wrap').forEach(wrap => {
+                const textarea = wrap.querySelector('textarea');
+                const btn = wrap.parentElement.querySelector('.collapse-toggle');
+                if (!textarea || !btn) return;
+                
+                const maxH = 400; // ~20 linhas
+                const realH = textarea.scrollHeight;
+                
+                if (realH > maxH + 10) {
+                    // Excede 20 linhas → colapsar mostrando o final (mais recente)
+                    wrap.classList.add('collapsed');
+                    textarea.style.marginTop = -(realH - maxH) + 'px';
+                    btn.style.display = 'flex';
+                    btn.textContent = '▼ Ver tudo';
+                } else {
+                    wrap.classList.remove('collapsed');
+                    textarea.style.marginTop = '0px';
+                    btn.style.display = 'none';
+                }
+            });
+        };
+
         app.autoResize = (el) => {
             if (!el || el.tagName !== 'TEXTAREA') return;
             
@@ -4392,7 +4517,43 @@ GASOMETRIA ARTERIAL:
             if(!state.isReadOnly && !el.value.trim()) { 
                 el.value = "→ "; 
                 app.handleInput(el); 
-            } 
+            }
+            // Expandir wrap colapsável ao focar
+            const wrap = el.closest('.collapsible-wrap');
+            if (wrap && wrap.classList.contains('collapsed')) {
+                wrap.classList.remove('collapsed');
+                el.style.marginTop = '0px';
+                const btn = wrap.parentElement.querySelector('.collapse-toggle');
+                if (btn) btn.textContent = '▲ Ver menos';
+            }
+        };
+        
+        // Recolapsar ao sair do campo mostrando últimas 20 linhas
+        app.handleCollapseBlur = (el) => {
+            setTimeout(() => {
+                const wrap = el.closest('.collapsible-wrap');
+                if (!wrap) return;
+                const btn = wrap.parentElement.querySelector('.collapse-toggle');
+                if (!btn) return;
+                const maxH = 400;
+                if (el.scrollHeight > maxH + 10) {
+                    wrap.classList.add('collapsed');
+                    el.style.marginTop = -(el.scrollHeight - maxH) + 'px';
+                    btn.style.display = 'flex';
+                    btn.textContent = '▼ Ver tudo';
+                }
+            }, 200);
+        };
+        
+        // Expandir collapsible ao focar (para campos sem handleSmartFocus)
+        app.expandCollapsible = (el) => {
+            const wrap = el.closest('.collapsible-wrap');
+            if (wrap && wrap.classList.contains('collapsed')) {
+                wrap.classList.remove('collapsed');
+                el.style.marginTop = '0px';
+                const btn = wrap.parentElement.querySelector('.collapse-toggle');
+                if (btn) btn.textContent = '▲ Ver menos';
+            }
         };
 
         // SMART ENTER
@@ -4485,7 +4646,7 @@ GASOMETRIA ARTERIAL:
             if (state.currentData.passometros?.length > 0) {
                 const ant = state.currentData.passometros[state.currentData.passometros.length - 1];
                 // Agora mantendo EXAMES, PARECER e DIAGNÓSTICOS no próximo dia
-                ['diag_primario','diag_secundario','culturas','gaso','vm','parecer','medicamentos','conduta','lista_invasivos','lista_atb','vit_nutri','exames'].forEach(k => {
+                ['diag_primario','diag_secundario','culturas','gaso','vm','parecer','medicamentos','conduta','lista_invasivos','lista_atb','vit_nutri','vit_transf','exames','exames_outros'].forEach(k => {
                     novo[k] = ant[k] || '';
                 });
                 // Copiar "Dia Atual" do dia anterior para "Ant." do novo dia
@@ -4496,8 +4657,8 @@ GASOMETRIA ARTERIAL:
                     novo[p+'_noturno'] = '';
                     novo[p+'_atual'] = '';
                 });
-                // Balanço Hídrico: Anterior do novo dia = ACUMULADO do dia anterior (não dia atual)
-                novo.bh_ant = ant.bh_acumulado || ant.bh_atual || '';
+                // Balanço Hídrico: Anterior do novo dia = DIA ATUAL do dia anterior
+                novo.bh_ant = ant.bh_atual || '';
                 novo.bh_diurno = '';
                 novo.bh_noturno = '';
                 novo.bh_atual = '';
@@ -4972,26 +5133,44 @@ GASOMETRIA ARTERIAL:
                     currentDateStr = dateInput.value;
                 }
             }
-            const currentDate = new Date(currentDateStr);
             
-            list.forEach((item, idx) => {
-                // Garantir retrocompatibilidade
+            // Parse seguro: evitar offset UTC
+            const parseDateLocal = (str) => {
+                if (!str) return new Date();
+                if (str instanceof Date) return str;
+                if (typeof str === 'string' && /^\d{4}-\d{2}-\d{2}$/.test(str)) {
+                    return new Date(str + 'T00:00:00');
+                }
+                return new Date(str);
+            };
+            
+            const currentDate = parseDateLocal(currentDateStr);
+            
+            const formatShortDate = (dateStr) => {
+                const d = parseDateLocal(dateStr);
+                return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
+            };
+            
+            // Preparar itens com índice original (para botões)
+            const indexed = list.map((item, idx) => {
                 if (item.active === undefined) item.active = true;
                 if (item.endDate === undefined) item.endDate = null;
-                
-                const startDate = new Date(item.startDate || currentDate);
-                
-                // Calcular dias (D0 = dia inicial)
+                return { item, idx };
+            });
+            
+            // Ordenar: RETIRADOS primeiro (topo), ATIVOS por último (fundo)
+            indexed.sort((a, b) => {
+                const aActive = a.item.active && !a.item.endDate;
+                const bActive = b.item.active && !b.item.endDate;
+                if (aActive === bActive) return 0;
+                return aActive ? 1 : -1; // ativos vão para o final
+            });
+            
+            indexed.forEach(({ item, idx }) => {
+                const startDate = parseDateLocal(item.startDate || currentDateStr);
                 const diffTime = currentDate - startDate;
                 const diffDays = Math.floor(diffTime / (1000 * 60 * 60 * 24));
-                
-                // Formatar datas para exibição (DD/MM)
-                const formatShortDate = (date) => {
-                    const d = new Date(date);
-                    return `${String(d.getDate()).padStart(2,'0')}/${String(d.getMonth()+1).padStart(2,'0')}`;
-                };
-                
-                const startFormatted = formatShortDate(startDate);
+                const startFormatted = formatShortDate(item.startDate || currentDateStr);
                 
                 let displayText = '';
                 let tagClass = 'tag-device';
@@ -4999,15 +5178,14 @@ GASOMETRIA ARTERIAL:
                 let finishBtn = '';
                 
                 if (item.endDate && !item.active) {
-                    // DISPOSITIVO ENCERRADO - Mostra período completo
-                    const endFormatted = formatShortDate(new Date(item.endDate));
-                    displayText = `${item.name} <span class="tag-day-ended">${startFormatted} - ${endFormatted}</span>`;
+                    // ENCERRADO - inserção e retirada
+                    const endFormatted = formatShortDate(item.endDate);
+                    displayText = `${item.name} <span class="tag-day-ended">${startFormatted} → ${endFormatted}</span>`;
                     tagClass = 'tag-device-ended';
                     removeBtn = state.isReadOnly ? '' : `<span class="ml-1 text-red-300 cursor-pointer font-bold opacity-50 hover:opacity-100" data-index="${idx}" onclick="app.removeDevice(this)" title="Excluir registro">×</span>`;
-                    finishBtn = '';
                 } else {
-                    // DISPOSITIVO ATIVO - Mostra D+N
-                    displayText = `${item.name} <span class="tag-day">D${diffDays >= 0 ? diffDays : 0}</span>`;
+                    // ATIVO - inserção + D+N
+                    displayText = `${item.name} <span class="tag-day">${startFormatted} · D${diffDays >= 0 ? diffDays : 0}</span>`;
                     removeBtn = state.isReadOnly ? '' : `<span class="ml-1 text-red-500 cursor-pointer font-bold" data-index="${idx}" onclick="app.removeDevice(this)" title="Remover">×</span>`;
                     finishBtn = state.isReadOnly ? '' : `<span class="ml-1 text-green-600 cursor-pointer font-bold text-xs" data-index="${idx}" onclick="app.finishDevice(this)" title="Retirar/Encerrar">✓</span>`;
                 }
@@ -5245,7 +5423,8 @@ GASOMETRIA ARTERIAL:
                     exames: {
                         culturas: getVal('culturas'),
                         gasometrias: getVal('gaso'),
-                        relevantes: getVal('exames')
+                        laboratoriais: getVal('exames'),
+                        outros: getVal('exames_outros')
                     },
                     suporte: {
                         ventilatorio: getVal('vm'),
@@ -5343,38 +5522,47 @@ Formate de forma profissional e legível.`;
         // HELPER: CHAMADA DE IA (GROQ API - GRATUITA)
         // ============================================
         app.chamarIA = async (systemPrompt, userPrompt, maxTokens = 1500) => {
-            // Verificar se tem API key configurada
+            // Auto-carregar API key se não estiver no state
             if (!state.apiKey || state.apiKey.trim() === '') {
-                throw new Error('API Key não configurada. Configure em Configurações.');
+                app.loadApiKey();
+            }
+            
+            if (!state.apiKey || state.apiKey.trim() === '') {
+                throw new Error('API Key não configurada. Configure em Configurações (⚙️).');
             }
             
             // Usar Groq API (gratuita e rápida)
-            const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
-                method: 'POST',
-                headers: {
-                    'Authorization': `Bearer ${state.apiKey}`,
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    model: 'llama-3.3-70b-versatile', // Modelo gratuito e potente
-                    messages: [
-                        {
-                            role: 'system',
-                            content: systemPrompt
-                        },
-                        {
-                            role: 'user',
-                            content: userPrompt
-                        }
-                    ],
-                    temperature: 0.1,
-                    max_tokens: maxTokens
-                })
-            });
+            let response;
+            try {
+                response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${state.apiKey}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        model: 'llama-3.3-70b-versatile',
+                        messages: [
+                            { role: 'system', content: systemPrompt },
+                            { role: 'user', content: userPrompt }
+                        ],
+                        temperature: 0.1,
+                        max_tokens: maxTokens
+                    })
+                });
+            } catch (fetchError) {
+                throw new Error('Falha na conexão com a API. Verifique sua internet e tente novamente.');
+            }
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.error?.message || `Erro na API: ${response.status}`);
+                const msg = errorData.error?.message || '';
+                if (response.status === 401) {
+                    throw new Error('API Key inválida ou expirada. Atualize em Configurações (⚙️).');
+                } else if (response.status === 429) {
+                    throw new Error('Limite de requisições atingido. Aguarde 1 minuto e tente novamente.');
+                }
+                throw new Error(msg || `Erro na API: ${response.status}`);
             }
             
             const data = await response.json();
@@ -5383,7 +5571,6 @@ Formate de forma profissional e legível.`;
                 throw new Error(data.error.message);
             }
             
-            // Retornar texto gerado
             const text = data?.choices?.[0]?.message?.content;
             if (!text) throw new Error('Resposta vazia da IA');
             return text;
@@ -5776,12 +5963,25 @@ ATENÇÃO: Use SOMENTE os dados acima. Não invente NENHUMA informação.`;
             // Parsear listas (idêntico ao consolidado)
             let invasivos = 'SEM INFORMAÇÕES';
             let antibioticos = 'SEM INFORMAÇÕES';
+            
+            // Formatar data YYYY-MM-DD → DD/MM
+            const fmtData = (d) => {
+                if (!d) return '';
+                const p = d.split('-');
+                return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+            };
+            
             try {
                 const inv = dia.lista_invasivos ? JSON.parse(dia.lista_invasivos) : [];
                 if (inv.length > 0) {
                     invasivos = inv.map(i => {
                         let s = i.name;
-                        if (i.startDate) s += ` (${i.startDate})`;
+                        if (i.startDate) s += ` (inserção: ${fmtData(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtData(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     }).join('\n');
                 }
@@ -5791,7 +5991,12 @@ ATENÇÃO: Use SOMENTE os dados acima. Não invente NENHUMA informação.`;
                 if (atb.length > 0) {
                     antibioticos = atb.map(i => {
                         let s = i.name;
-                        if (i.startDate) s += ` (${i.startDate})`;
+                        if (i.startDate) s += ` (inserção: ${fmtData(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtData(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     }).join('\n');
                 }
@@ -5873,8 +6078,13 @@ ATENÇÃO: Use SOMENTE os dados acima. Não invente NENHUMA informação.`;
             texto += 'MEDICAMENTOS\n';
             texto += val(dia.medicamentos) + '\n\n';
             
-            texto += 'EXAMES RELEVANTES\n';
+            texto += 'EXAMES LABORATORIAIS\n';
             texto += val(dia.exames) + '\n\n';
+            
+            if (dia.exames_outros && dia.exames_outros.trim()) {
+                texto += 'OUTROS EXAMES\n';
+                texto += dia.exames_outros.trim() + '\n\n';
+            }
             
             texto += 'CONDUTA\n';
             texto += val(dia.conduta);
@@ -6994,6 +7204,12 @@ ${'</'+'script>'}</body></html>`);
                         if (!state.currentData.passometros[idx]) state.currentData.passometros[idx] = {};
                         state.currentData.passometros[idx].exames = exField.value;
                     }
+                    const exOutros = card.querySelector('[data-key="exames_outros"]');
+                    if (exOutros && exOutros.value.trim()) {
+                        if (!state.currentData.passometros) state.currentData.passometros = [];
+                        if (!state.currentData.passometros[idx]) state.currentData.passometros[idx] = {};
+                        state.currentData.passometros[idx].exames_outros = exOutros.value;
+                    }
                 });
             };
             forceSync();
@@ -7387,23 +7603,35 @@ ${'</'+'script>'}
             const dias = state.currentData.passometros || [];
             const ultimoDia = dias[dias.length - 1] || {};
             
-            // Função auxiliar: valor literal ou "SEM INFORMAÇÕES"
+            // Função auxiliar: OMITIR seção se vazia
             const campo = (titulo, valor) => {
                 const valorLimpo = valor ? valor.toString().trim() : '';
-                if (valorLimpo === '' || valorLimpo === 'undefined' || valorLimpo === 'null') {
-                    return `${titulo}\nSEM INFORMAÇÕES\n\n`;
+                if (!valorLimpo || valorLimpo === 'undefined' || valorLimpo === 'null') {
+                    return ''; // Não incluir no consolidado
                 }
                 return `${titulo}\n${valorLimpo}\n\n`;
             };
             
-            // Parsear listas de dispositivos com datas
+            // Formatar data YYYY-MM-DD → DD/MM
+            const fmtData = (d) => {
+                if (!d) return '';
+                const p = d.split('-');
+                return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+            };
+            
+            // Parsear listas de dispositivos com datas de inserção e retirada
             const getLista = (jsonString) => {
                 try {
                     const arr = jsonString ? JSON.parse(jsonString) : [];
                     if (arr.length === 0) return '';
                     return arr.map(i => {
                         let s = i.name || i;
-                        if (i.startDate) s += ` (${i.startDate})`;
+                        if (i.startDate) s += ` (inserção: ${fmtData(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtData(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     }).join('\n');
                 } catch(e) {
@@ -7411,10 +7639,12 @@ ${'</'+'script>'}
                 }
             };
             
-            let texto = 'CONSOLIDADO\n\n';
+            const turnoLabel = turno === 'diurno' ? 'PLANTÃO DIURNO' : 'PLANTÃO NOTURNO';
+            let texto = `CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - ${turnoLabel}\n\n`;
             
             texto += campo('HISTÓRIA CLÍNICA ATUAL', admissao.historia_clinica);
             texto += campo('COMORBIDADES', admissao.comorbidades);
+            texto += campo('MEDICAMENTOS DE USO HABITUAL', admissao.medicamentos_habituais);
             texto += campo('DIAGNÓSTICO PRIMÁRIO', ultimoDia.diag_primario);
             texto += campo('DIAGNÓSTICO SECUNDÁRIO', ultimoDia.diag_secundario);
             texto += campo('INVASIVOS', getLista(ultimoDia.lista_invasivos));
@@ -7422,36 +7652,30 @@ ${'</'+'script>'}
             texto += campo('CULTURAS', ultimoDia.culturas);
             texto += campo('GASOMETRIAS', ultimoDia.gaso);
             
-            // Evolução conforme turno
+            // Evolução conforme turno (sem referência diurna no noturno)
             const evoTitulo = turno === 'diurno' ? 'EVOLUÇÃO MÉDICA - DIA' : 'EVOLUÇÃO MÉDICA - NOITE';
             const evoTexto = turno === 'diurno' ? ultimoDia.evo_diurna : ultimoDia.evo_noturna;
             texto += campo(evoTitulo, evoTexto);
-            
-            // Noturno: incluir evolução diurna como referência
-            if (turno === 'noturno' && ultimoDia.evo_diurna && ultimoDia.evo_diurna.trim()) {
-                texto += campo('EVOLUÇÃO DIURNA (REFERÊNCIA)', ultimoDia.evo_diurna);
-            }
             
             texto += campo('GLICEMIAS DIA ANTERIOR', ultimoDia.vit_glic_ant);
             texto += campo('FEBRE DIA ANTERIOR', ultimoDia.vit_febre_ant);
             texto += campo('DIURESE DIA ANTERIOR', ultimoDia.vit_diu_ant);
             
             // Balanço com acumulado e PI
-            let balancoTexto = '';
             const partes = [];
             if (ultimoDia.bh_ant) partes.push(`Anterior: ${ultimoDia.bh_ant}`);
             if (ultimoDia.bh_atual) partes.push(`Dia Atual: ${ultimoDia.bh_atual}`);
             if (ultimoDia.bh_acumulado) partes.push(`Acumulado: ${ultimoDia.bh_acumulado}`);
             if (ultimoDia.bh_acum_pi) partes.push(`Acum c/ PI: ${ultimoDia.bh_acum_pi}`);
-            if (partes.length > 0) balancoTexto = partes.join(' | ');
-            texto += campo('BALANÇO DIA ANTERIOR E ACUMULADO', balancoTexto);
+            if (partes.length > 0) texto += campo('BALANÇO DIA ANTERIOR E ACUMULADO', partes.join(' | '));
             
             texto += campo('EVACUAÇÕES DIA ANTERIOR', ultimoDia.vit_evac_ant);
             texto += campo('DRENOS DIA ANTERIOR', ultimoDia.vit_dre_ant);
             texto += campo('HEMOTERAPIA', ultimoDia.vit_transf);
             texto += campo('NUTRIÇÃO', ultimoDia.vit_nutri);
             texto += campo('MEDICAMENTOS', ultimoDia.medicamentos);
-            texto += campo('EXAMES RELEVANTES', ultimoDia.exames);
+            texto += campo('EXAMES LABORATORIAIS', ultimoDia.exames);
+            texto += campo('OUTROS EXAMES', ultimoDia.exames_outros);
             texto += campo('CONDUTA', ultimoDia.conduta);
             
             return texto;
@@ -7516,7 +7740,14 @@ ${'</'+'script>'}
             // Helper: retorna valor literal ou "SEM INFORMAÇÕES"
             const val = (v) => (v && v.trim()) ? v.trim() : 'SEM INFORMAÇÕES';
             
-            // Parsear listas de dispositivos
+            // Formatar data YYYY-MM-DD → DD/MM
+            const fmtData = (d) => {
+                if (!d) return '';
+                const p = d.split('-');
+                return p.length === 3 ? `${p[2]}/${p[1]}` : d;
+            };
+            
+            // Parsear listas de dispositivos com inserção e retirada
             let invasivos = 'SEM INFORMAÇÕES';
             let antibioticos = 'SEM INFORMAÇÕES';
             try {
@@ -7524,7 +7755,12 @@ ${'</'+'script>'}
                 if (inv.length > 0) {
                     invasivos = inv.map(i => {
                         let s = i.name;
-                        if (i.startDate) s += ` (${i.startDate})`;
+                        if (i.startDate) s += ` (inserção: ${fmtData(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtData(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     }).join('\n');
                 }
@@ -7534,7 +7770,12 @@ ${'</'+'script>'}
                 if (atb.length > 0) {
                     antibioticos = atb.map(i => {
                         let s = i.name;
-                        if (i.startDate) s += ` (${i.startDate})`;
+                        if (i.startDate) s += ` (inserção: ${fmtData(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtData(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     }).join('\n');
                 }
@@ -7556,74 +7797,45 @@ ${'</'+'script>'}
             }
             
             // ═══ MONTAR CONSOLIDADO ═══
+            // Helper: omitir seção se vazia
+            const sec = (titulo, valor) => {
+                const v = valor ? valor.toString().trim() : '';
+                if (!v || v === 'SEM INFORMAÇÕES') return '';
+                return `${titulo}\n${v}\n\n`;
+            };
+            
+            const turnoLabel = turno === 'diurno' ? 'PLANTÃO DIURNO' : 'PLANTÃO NOTURNO';
             let texto = '';
-            texto += 'CONSOLIDADO\n\n';
+            texto += `CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - ${turnoLabel}\n\n`;
             
-            texto += 'HISTÓRIA CLÍNICA ATUAL\n';
-            texto += val(admissao.historia_clinica) + '\n\n';
+            texto += sec('HISTÓRIA CLÍNICA ATUAL', admissao.historia_clinica);
+            texto += sec('COMORBIDADES', admissao.comorbidades);
+            texto += sec('MEDICAMENTOS DE USO HABITUAL', admissao.medicamentos_habituais);
+            texto += sec('DIAGNÓSTICO PRIMÁRIO', dia.diag_primario);
+            texto += sec('DIAGNÓSTICO SECUNDÁRIO', dia.diag_secundario);
+            texto += sec('INVASIVOS', invasivos);
+            texto += sec('ANTIBIÓTICOS', antibioticos);
+            texto += sec('CULTURAS', dia.culturas);
+            texto += sec('GASOMETRIAS', dia.gaso);
             
-            texto += 'COMORBIDADES\n';
-            texto += val(admissao.comorbidades) + '\n\n';
+            // Evolução conforme turno (sem referência diurna no noturno)
+            texto += sec(evoTitulo, dia[evoKey]);
             
-            texto += 'DIAGNÓSTICO PRIMÁRIO\n';
-            texto += val(dia.diag_primario) + '\n\n';
+            texto += sec('GLICEMIAS DIA ANTERIOR', dia.vit_glic_ant);
+            texto += sec('FEBRE DIA ANTERIOR', dia.vit_febre_ant);
+            texto += sec('DIURESE DIA ANTERIOR', dia.vit_diu_ant);
+            if (balancoTexto !== 'SEM INFORMAÇÕES') texto += sec('BALANÇO DIA ANTERIOR E ACUMULADO', balancoTexto);
+            texto += sec('EVACUAÇÕES DIA ANTERIOR', dia.vit_evac_ant);
+            texto += sec('DRENOS DIA ANTERIOR', dia.vit_dre_ant);
+            texto += sec('HEMOTERAPIA', dia.vit_transf);
+            texto += sec('NUTRIÇÃO', dia.vit_nutri);
+            texto += sec('MEDICAMENTOS', dia.medicamentos);
+            texto += sec('EXAMES LABORATORIAIS', dia.exames);
+            texto += sec('OUTROS EXAMES', dia.exames_outros);
+            texto += sec('CONDUTA', dia.conduta);
             
-            texto += 'DIAGNÓSTICO SECUNDÁRIO\n';
-            texto += val(dia.diag_secundario) + '\n\n';
-            
-            texto += 'INVASIVOS\n';
-            texto += invasivos + '\n\n';
-            
-            texto += 'ANTIBIÓTICOS\n';
-            texto += antibioticos + '\n\n';
-            
-            texto += 'CULTURAS\n';
-            texto += val(dia.culturas) + '\n\n';
-            
-            texto += 'GASOMETRIAS\n';
-            texto += val(dia.gaso) + '\n\n';
-            
-            texto += evoTitulo + '\n';
-            texto += val(dia[evoKey]) + '\n\n';
-            
-            // Noturno: incluir evolução diurna como referência
-            if (turno === 'noturno' && dia.evo_diurna && dia.evo_diurna.trim()) {
-                texto += 'EVOLUÇÃO DIURNA (REFERÊNCIA)\n';
-                texto += dia.evo_diurna.trim() + '\n\n';
-            }
-            
-            texto += 'GLICEMIAS DIA ANTERIOR\n';
-            texto += val(dia.vit_glic_ant) + '\n\n';
-            
-            texto += 'FEBRE DIA ANTERIOR\n';
-            texto += val(dia.vit_febre_ant) + '\n\n';
-            
-            texto += 'DIURESE DIA ANTERIOR\n';
-            texto += val(dia.vit_diu_ant) + '\n\n';
-            
-            texto += 'BALANÇO DIA ANTERIOR E ACUMULADO\n';
-            texto += balancoTexto + '\n\n';
-            
-            texto += 'EVACUAÇÕES DIA ANTERIOR\n';
-            texto += val(dia.vit_evac_ant) + '\n\n';
-            
-            texto += 'DRENOS DIA ANTERIOR\n';
-            texto += val(dia.vit_dre_ant) + '\n\n';
-            
-            texto += 'HEMOTERAPIA\n';
-            texto += val(dia.vit_transf) + '\n\n';
-            
-            texto += 'NUTRIÇÃO\n';
-            texto += val(dia.vit_nutri) + '\n\n';
-            
-            texto += 'MEDICAMENTOS\n';
-            texto += val(dia.medicamentos) + '\n\n';
-            
-            texto += 'EXAMES RELEVANTES\n';
-            texto += val(dia.exames) + '\n\n';
-            
-            texto += 'CONDUTA\n';
-            texto += val(dia.conduta);
+            // Remover trailing newlines
+            texto = texto.trimEnd();
             
             // Copiar e mostrar
             navigator.clipboard.writeText(texto).then(() => {
@@ -7843,8 +8055,12 @@ ${'</'+'script>'}
                     const arr = json ? JSON.parse(json) : [];
                     return arr.map(i => {
                         let s = i.name || i;
-                        if (i.startDate) s += ` (desde ${i.startDate})`;
-                        if (i.endDate && !i.active) s += ` → retirado ${i.endDate}`;
+                        if (i.startDate) s += ` (inserção: ${fmtBR(i.startDate)}`;
+                        if (i.endDate && !i.active) {
+                            s += ` - retirada: ${fmtBR(i.endDate)})`;
+                        } else if (i.startDate) {
+                            s += ' - ATIVO)';
+                        }
                         return s;
                     });
                 } catch(e) { return []; }
@@ -7874,9 +8090,12 @@ ${'</'+'script>'}
             
             const formatarDispositivo = (i) => {
                 let s = i.name;
-                if (i.startDate) s += ` (desde ${fmtBR(i.startDate)})`;
-                if (i.endDate && !i.active) s += ` → retirado ${fmtBR(i.endDate)}`;
-                if (i.active) s += ' [ATIVO]';
+                if (i.startDate) s += ` (inserção: ${fmtBR(i.startDate)}`;
+                if (i.endDate && !i.active) {
+                    s += ` - retirada: ${fmtBR(i.endDate)})`;
+                } else if (i.startDate) {
+                    s += ' - ATIVO)';
+                }
                 return s;
             };
             
@@ -8003,87 +8222,81 @@ ${'</'+'script>'}
             app.showNotification('🤖 Gerando sumário de alta via IA...', 'info');
             
             try {
+                // Garantir API key carregada
+                if (!state.apiKey) app.loadApiKey();
+                
                 const dados = app.coletarDadosCompletos();
                 
-                const systemPrompt = `Você é um médico intensivista experiente gerando um SUMÁRIO DE ALTA CTI DETALHADO para a enfermaria.
+                const systemPrompt = `Você é um médico intensivista gerando um SUMÁRIO DE ALTA CTI para a enfermaria.
 
-OBJETIVO: Documento COMPLETO, DETALHADO e BEM ORGANIZADO para a equipe da enfermaria dar continuidade ao tratamento com segurança. Use TODAS as informações fornecidas (admissão + evolução diária completa).
+OBJETIVO: Documento COMPLETO para a equipe da enfermaria. Use TODAS as informações fornecidas.
 
 ESTRUTURA OBRIGATÓRIA (use exatamente estes títulos):
 
-SUMÁRIO DE ALTA - CTI
+CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE ALTA
 
 IDENTIFICAÇÃO
 [Nome, idade, sexo, data admissão CTI, total de dias de internação CTI]
 
 HISTÓRIA CLÍNICA
-[Reescrever a história clínica de forma médica profissional, em texto corrido, incluindo motivo da internação, evolução e desfechos. NÃO copiar literal, REESCREVER]
+[Reescrever em texto corrido profissional. NÃO copiar literal, REESCREVER]
 
 COMORBIDADES
-[Listar todas as comorbidades]
+[Listar todas]
 
-ALERGIAS
-[Se informadas]
+MEDICAMENTOS DE USO HABITUAL (PRÉ-INTERNAÇÃO)
+[Se informados]
 
 DIAGNÓSTICOS DE ALTA
-[Listar TODOS os diagnósticos primários e secundários que apareceram durante internação, destacando os atuais]
+[TODOS os diagnósticos com CID-10 quando disponível]
 
 EVOLUÇÃO NA CTI
-[Resumo cronológico DETALHADO da evolução, usando os dados de evolução diurna/noturna, condutas tomadas, intercorrências, procedimentos, mudanças de drogas vasoativas, VM, etc. Deve ser um texto claro que permita ao médico da enfermaria entender TODO o curso da internação]
+[Resumo cronológico da evolução]
 
 DISPOSITIVOS INVASIVOS
-[TODOS os dispositivos com datas de inserção e retirada se houver]
+[Com datas de inserção e retirada]
 
 ANTIMICROBIANOS UTILIZADOS
-[TODOS os ATB com datas de início e fim, indicando quais ainda estão ativos]
+[Com datas, indicando quais ainda estão ativos]
 
 CULTURAS E MICROBIOLOGIA
-[Resultados de culturas com datas]
+[Resultados com datas]
 
 EXAMES LABORATORIAIS
-[Compilar TODOS os exames de TODOS os dias de forma organizada cronologicamente, sem duplicar resultados idênticos]
+[Organizados cronologicamente, sem duplicar]
 
 GASOMETRIAS
-[Compilar gasometrias relevantes]
+[Relevantes]
 
 BALANÇO HÍDRICO
 [Último balanço e acumulado]
 
 MEDICAMENTOS EM USO NA ALTA
-[Lista COMPLETA dos medicamentos atuais com doses]
+[Lista COMPLETA com doses]
 
 CONDUTA PARA ENFERMARIA
-[Usar a conduta informada pelo médico e organizar de forma clara e estruturada]
+[Organizar de forma clara e estruturada]
 
 PENDÊNCIAS E OBSERVAÇÕES
-[Exames pendentes, retornos de pareceres, cuidados especiais]
+[Se houver]
 
 ---
 
 RESUMO DRG HOSPITALAR
-
-Listar TODOS os diagnósticos identificados durante a internação com seus respectivos CID-10:
 - Diagnóstico principal (DRG): [diagnóstico] - [CID-10]
-- Diagnósticos secundários:
-  1. [diagnóstico] - [CID-10]
-  2. [diagnóstico] - [CID-10]
-  (listar todos)
-- Procedimentos realizados: [listar com códigos se possível]
-- Complicações: [listar com CID-10]
+- Diagnósticos secundários com CID-10
+- Procedimentos realizados
+- Complicações com CID-10
 
 REGRAS:
-1. Use APENAS informações fornecidas — NUNCA invente, deduza ou extrapole dados
-2. Se um dado não foi informado, escreva "Não informado" na seção correspondente — NÃO preencha com suposições
-3. NUNCA invente valores de exames, medicamentos, doses, procedimentos ou datas
-4. NUNCA adicione diagnósticos CID-10 que não estejam explícitos nos dados
-5. OTIMIZE a história clínica reescrevendo em texto corrido profissional
-6. Inclua TODOS os exames organizados cronologicamente sem duplicação
-7. A conduta para enfermaria deve ser DESTAQUE
-8. O DRG deve incluir CID-10 APENAS para diagnósticos que já tenham CID nos dados
-9. Máximo 1500 palavras
-10. VERIFICAÇÃO FINAL: Releia e confirme que CADA informação existe nos dados fornecidos`;
+1. Use APENAS informações fornecidas — NUNCA invente dados
+2. Se um dado não foi informado, OMITA a seção inteira — não escreva "Não informado"
+3. NUNCA invente valores de exames, medicamentos, doses ou procedimentos
+4. O DRG deve incluir CID-10 APENAS para diagnósticos que já tenham CID nos dados
+5. Máximo 1500 palavras
+6. VERIFICAÇÃO: Releia e confirme que CADA informação existe nos dados fornecidos`;
 
-                const userPrompt = `Gere o sumário de alta CTI DETALHADO com DRG:
+                const userPrompt = `Gere o sumário de alta CTI com DRG:
 
 DADOS COMPLETOS DO PACIENTE:
 ${JSON.stringify(dados, null, 2)}
@@ -8091,9 +8304,42 @@ ${JSON.stringify(dados, null, 2)}
 CONDUTA PARA ENFERMARIA (informada pelo médico):
 ${condutaEnfermaria}`;
 
-                const sumario = await app.chamarIA(systemPrompt, userPrompt, 4000);
+                let sumario;
+                try {
+                    sumario = await app.chamarIA(systemPrompt, userPrompt, 4000);
+                } catch (apiError) {
+                    // FALLBACK: Gerar sumário sem IA usando dados brutos
+                    console.warn('IA falhou, gerando sumário manual:', apiError.message);
+                    app.showNotification('⚠️ IA indisponível — gerando sumário com dados brutos', 'warning');
+                    
+                    const sec = (t, v) => {
+                        const val = v ? v.toString().trim() : '';
+                        return val ? `${t}\n${val}\n\n` : '';
+                    };
+                    
+                    sumario = 'CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE ALTA\n\n';
+                    sumario += sec('IDENTIFICAÇÃO', `${dados.nome}, ${dados.idade} anos${dados.sexo ? ', ' + dados.sexo : ''}\nAdmissão CTI: ${dados.dataAdmissaoBR} | Dias de internação: ${dados.diasInternacao}`);
+                    sumario += sec('HISTÓRIA CLÍNICA', dados.historiaClinica);
+                    sumario += sec('COMORBIDADES', dados.comorbidades);
+                    sumario += sec('MEDICAMENTOS DE USO HABITUAL', dados.medicamentosHabituais);
+                    sumario += sec('DIAGNÓSTICO PRIMÁRIO', dados.diagPrimario);
+                    sumario += sec('DIAGNÓSTICO SECUNDÁRIO', dados.diagSecundario);
+                    sumario += sec('DISPOSITIVOS INVASIVOS', dados.invasivos.length > 0 ? dados.invasivos.join('\n') : '');
+                    sumario += sec('ANTIMICROBIANOS', dados.antibioticos.length > 0 ? dados.antibioticos.join('\n') : '');
+                    sumario += sec('CULTURAS', dados.culturas);
+                    sumario += sec('GASOMETRIAS', dados.gasometrias);
+                    sumario += sec('EXAMES', dados.todosExames.map(e => e.texto).join('\n'));
+                    
+                    let bh = [];
+                    if (dados.bhAnt) bh.push(`Anterior: ${dados.bhAnt}`);
+                    if (dados.bhAcumulado) bh.push(`Acumulado: ${dados.bhAcumulado}`);
+                    sumario += sec('BALANÇO HÍDRICO', bh.join(' | '));
+                    
+                    sumario += sec('MEDICAMENTOS EM USO NA ALTA', dados.medicamentosAtuais);
+                    sumario += sec('CONDUTA PARA ENFERMARIA', condutaEnfermaria);
+                    sumario += sec('ÚLTIMA EVOLUÇÃO', dados.ultimaEvolucao);
+                }
                 
-                // Mostrar para revisão (editável) ao invés de copiar direto
                 app.mostrarPreviewIA(sumario, null);
                 navigator.clipboard.writeText(sumario).catch(() => {});
                 app.showNotification('⚠️ Revise o sumário — clique no texto para editar erros', 'success');
@@ -8143,19 +8389,23 @@ ${condutaEnfermaria}`;
             app.showNotification('🤖 Gerando sumário de transferência via IA...', 'info');
             
             try {
+                // Garantir API key carregada
+                if (!state.apiKey) app.loadApiKey();
+                
                 const dados = app.coletarDadosCompletos();
                 
-                // Montar texto estilo consolidado + dados extras
-                const val = (v) => v || 'SEM INFORMAÇÕES';
+                // Helper: omitir se vazio
+                const sec = (t, v) => {
+                    const val = v ? v.toString().trim() : '';
+                    return val ? `${t}\n${val}\n\n` : '';
+                };
                 
-                let textoBase = 'SUMÁRIO DE TRANSFERÊNCIA\n\n';
+                let textoBase = 'CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE TRANSFERÊNCIA\n\n';
                 
                 textoBase += `LOCAL DE DESTINO: ${destino}\n`;
                 textoBase += `MOTIVO DA TRANSFERÊNCIA: ${motivo}\n\n`;
                 
-                textoBase += 'IDENTIFICAÇÃO\n';
-                textoBase += `${dados.nome}, ${dados.idade} anos${dados.sexo ? ', ' + dados.sexo : ''}\n`;
-                textoBase += `Admissão CTI: ${dados.dataAdmissaoBR || 'Não informado'} | Dias de internação: ${dados.diasInternacao}\n\n`;
+                textoBase += sec('IDENTIFICAÇÃO', `${dados.nome}, ${dados.idade} anos${dados.sexo ? ', ' + dados.sexo : ''}\nAdmissão CTI: ${dados.dataAdmissaoBR || 'Não informado'} | Dias de internação: ${dados.diasInternacao}`);
                 
                 // Chamar IA para otimizar a história clínica
                 const systemPromptHC = `Você é um médico intensivista. Reescreva esta história clínica de forma profissional e concisa (máximo 150 palavras). Use APENAS as informações fornecidas — NUNCA invente dados, exames, medicamentos ou procedimentos. Se um dado não consta, omita. Responda APENAS com o texto otimizado, sem títulos.`;
@@ -8169,84 +8419,44 @@ ${condutaEnfermaria}`;
                     }
                 }
                 
-                textoBase += 'HISTÓRIA CLÍNICA ATUAL\n';
-                textoBase += val(historiaOtimizada) + '\n\n';
+                textoBase += sec('HISTÓRIA CLÍNICA ATUAL', historiaOtimizada);
+                textoBase += sec('COMORBIDADES', dados.comorbidades);
+                textoBase += sec('MEDICAMENTOS DE USO HABITUAL', dados.medicamentosHabituais);
+                textoBase += sec('DIAGNÓSTICO PRIMÁRIO', dados.diagPrimario);
+                textoBase += sec('DIAGNÓSTICO SECUNDÁRIO', dados.diagSecundario);
+                textoBase += sec('INVASIVOS', dados.invasivos.length > 0 ? dados.invasivos.join('\n') : '');
+                textoBase += sec('ANTIBIÓTICOS', dados.antibioticos.length > 0 ? dados.antibioticos.join('\n') : '');
+                textoBase += sec('CULTURAS', dados.culturas);
+                textoBase += sec('GASOMETRIAS', dados.gasometrias);
+                textoBase += sec('SUPORTE VENTILATÓRIO', dados.vm);
                 
-                textoBase += 'COMORBIDADES\n';
-                textoBase += val(dados.comorbidades) + '\n\n';
-                
-                textoBase += 'MEDICAMENTOS DE USO PRÉVIO (PRÉ-INTERNAÇÃO)\n';
-                textoBase += val(dados.medicamentosHabituais) + '\n\n';
-                
-                textoBase += 'DIAGNÓSTICO PRIMÁRIO\n';
-                textoBase += val(dados.diagPrimario) + '\n\n';
-                
-                textoBase += 'DIAGNÓSTICO SECUNDÁRIO\n';
-                textoBase += val(dados.diagSecundario) + '\n\n';
-                
-                textoBase += 'INVASIVOS\n';
-                textoBase += (dados.invasivos.length > 0 ? dados.invasivos.join('\n') : 'SEM INFORMAÇÕES') + '\n\n';
-                
-                textoBase += 'ANTIBIÓTICOS\n';
-                textoBase += (dados.antibioticos.length > 0 ? dados.antibioticos.join('\n') : 'SEM INFORMAÇÕES') + '\n\n';
-                
-                textoBase += 'CULTURAS\n';
-                textoBase += val(dados.culturas) + '\n\n';
-                
-                textoBase += 'GASOMETRIAS\n';
-                textoBase += val(dados.gasometrias) + '\n\n';
-                
-                textoBase += 'SUPORTE VENTILATÓRIO\n';
-                textoBase += val(dados.vm) + '\n\n';
-                
-                // EXAMES - apenas data digitada pelo colaborador (sem prefixo [Dia X])
-                textoBase += 'EXAMES DURANTE INTERNAÇÃO\n';
+                // EXAMES
                 if (dados.todosExames.length > 0) {
+                    textoBase += 'EXAMES DURANTE INTERNAÇÃO\n';
                     dados.todosExames.forEach(ex => {
                         textoBase += `${ex.texto}\n`;
                     });
-                } else {
-                    textoBase += 'SEM INFORMAÇÕES';
+                    textoBase += '\n';
                 }
-                textoBase += '\n';
                 
                 // Sinais vitais dia anterior
-                textoBase += 'GLICEMIAS DIA ANTERIOR\n';
-                textoBase += val(dados.glicAnt) + '\n\n';
+                textoBase += sec('GLICEMIAS DIA ANTERIOR', dados.glicAnt);
+                textoBase += sec('FEBRE DIA ANTERIOR', dados.febreAnt);
+                textoBase += sec('DIURESE DIA ANTERIOR', dados.diuAnt);
                 
-                textoBase += 'FEBRE DIA ANTERIOR\n';
-                textoBase += val(dados.febreAnt) + '\n\n';
-                
-                textoBase += 'DIURESE DIA ANTERIOR\n';
-                textoBase += val(dados.diuAnt) + '\n\n';
-                
-                textoBase += 'BALANÇO HÍDRICO\n';
                 let bhTexto = [];
                 if (dados.bhAnt) bhTexto.push(`Anterior: ${dados.bhAnt}`);
                 if (dados.bhAcumulado) bhTexto.push(`Acumulado: ${dados.bhAcumulado}`);
                 if (dados.bhAcumPI) bhTexto.push(`Acum c/ PI: ${dados.bhAcumPI}`);
-                textoBase += (bhTexto.length > 0 ? bhTexto.join(' | ') : 'SEM INFORMAÇÕES') + '\n\n';
+                if (bhTexto.length > 0) textoBase += sec('BALANÇO HÍDRICO', bhTexto.join(' | '));
                 
-                textoBase += 'EVACUAÇÕES DIA ANTERIOR\n';
-                textoBase += val(dados.evacAnt) + '\n\n';
-                
-                textoBase += 'DRENOS DIA ANTERIOR\n';
-                textoBase += val(dados.dreAnt) + '\n\n';
-                
-                textoBase += 'HEMOTERAPIA\n';
-                textoBase += val(dados.hemoterapia) + '\n\n';
-                
-                textoBase += 'NUTRIÇÃO\n';
-                textoBase += val(dados.nutrição) + '\n\n';
-                
-                textoBase += 'MEDICAMENTOS DE USO ATUAL\n';
-                textoBase += val(dados.medicamentosAtuais) + '\n\n';
-                
-                textoBase += 'ÚLTIMA EVOLUÇÃO MÉDICA\n';
-                textoBase += val(dados.ultimaEvolucao) + '\n\n';
-                
-                textoBase += 'CONDUTA ATUAL\n';
-                textoBase += val(dados.condutaAtual) + '\n\n';
+                textoBase += sec('EVACUAÇÕES DIA ANTERIOR', dados.evacAnt);
+                textoBase += sec('DRENOS DIA ANTERIOR', dados.dreAnt);
+                textoBase += sec('HEMOTERAPIA', dados.hemoterapia);
+                textoBase += sec('NUTRIÇÃO', dados.nutrição);
+                textoBase += sec('MEDICAMENTOS DE USO ATUAL', dados.medicamentosAtuais);
+                textoBase += sec('ÚLTIMA EVOLUÇÃO MÉDICA', dados.ultimaEvolucao);
+                textoBase += sec('CONDUTA ATUAL', dados.condutaAtual);
                 
                 textoBase += `Gerado em: ${new Date().toLocaleString('pt-BR')}`;
                 
