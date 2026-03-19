@@ -1297,38 +1297,62 @@
 
     <!-- MODAL DE CONFIGURAÇÃO -->
     <div id="config-modal" class="modal-overlay">
-        <div class="modal-content">
-            <h3 class="text-xl font-bold text-gray-900 mb-4">⚙️ Configuração da IA (Groq - GRATUITA)</h3>
-            <p class="text-sm text-gray-600 mb-4">Para usar as funcionalidades de IA, você precisa de uma API Key do Groq (100% GRATUITA e rápida).</p>
+        <div class="modal-content" style="max-width: 600px;">
+            <h3 class="text-xl font-bold text-gray-900 mb-4">⚙️ Configuração da IA</h3>
             
+            <!-- SELETOR DE PROVEDOR -->
             <div class="mb-4">
+                <label class="text-xs font-bold text-gray-700 block mb-2">PROVEDOR DE IA:</label>
+                <div class="flex gap-2">
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="ia-provider" value="groq" checked onchange="app.toggleIAProvider()" class="sr-only peer">
+                        <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-purple-500 peer-checked:bg-purple-50 text-center transition">
+                            <div class="font-bold text-sm">⚡ Groq</div>
+                            <div class="text-[10px] text-gray-500">Llama 3.3 70B — Gratuito</div>
+                        </div>
+                    </label>
+                    <label class="flex-1 cursor-pointer">
+                        <input type="radio" name="ia-provider" value="gemini" onchange="app.toggleIAProvider()" class="sr-only peer">
+                        <div class="p-3 rounded-lg border-2 border-gray-200 peer-checked:border-blue-500 peer-checked:bg-blue-50 text-center transition">
+                            <div class="font-bold text-sm">🔷 Gemini</div>
+                            <div class="text-[10px] text-gray-500">Google 2.0 Flash — Gratuito</div>
+                        </div>
+                    </label>
+                </div>
+            </div>
+            
+            <!-- GROQ CONFIG -->
+            <div id="config-groq" class="mb-4">
                 <label class="text-xs font-bold text-gray-700 block mb-2">API KEY GROQ:</label>
                 <input type="password" id="api-key-input" class="w-full border border-gray-300 rounded p-2 text-sm font-mono" placeholder="gsk_...">
-                <p class="text-xs text-gray-500 mt-1">Sua chave será armazenada apenas no seu navegador (localStorage)</p>
+                <div class="mt-2 p-3 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg text-white text-center">
+                    <a href="https://console.groq.com/keys" target="_blank" class="block bg-white text-purple-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition">
+                        ⚡ GERAR API KEY GROQ GRATUITA
+                    </a>
+                    <p class="text-[10px] mt-1 opacity-90">Login → Create API Key → Copie (gsk_...)</p>
+                </div>
             </div>
-
-            <div class="mb-4 p-4 bg-gradient-to-r from-purple-600 to-blue-600 rounded-lg text-white text-center shadow-lg">
-                <p class="font-bold text-sm mb-2">🔑 NÃO TEM API KEY?</p>
-                <a href="https://console.groq.com/keys" target="_blank" class="block bg-white text-purple-700 px-6 py-3 rounded-lg font-bold text-sm hover:bg-gray-100 transition-all shadow-md hover:shadow-xl">
-                    ⚡ GERAR API KEY GRATUITA AGORA
-                </a>
-                <p class="text-xs mt-2 opacity-90">Clique aqui e crie sua chave em 30 segundos!</p>
+            
+            <!-- GEMINI CONFIG -->
+            <div id="config-gemini" class="mb-4 hidden">
+                <label class="text-xs font-bold text-gray-700 block mb-2">API KEY GEMINI:</label>
+                <input type="password" id="gemini-key-input" class="w-full border border-gray-300 rounded p-2 text-sm font-mono" placeholder="AIza...">
+                <div class="mt-2 p-3 bg-gradient-to-r from-blue-600 to-cyan-600 rounded-lg text-white text-center">
+                    <a href="https://aistudio.google.com/apikey" target="_blank" class="block bg-white text-blue-700 px-4 py-2 rounded-lg font-bold text-sm hover:bg-gray-100 transition">
+                        🔷 GERAR API KEY GEMINI GRATUITA
+                    </a>
+                    <p class="text-[10px] mt-1 opacity-90">Google AI Studio → Get API Key → Create (AIza...)</p>
+                </div>
             </div>
-
-            <div class="mb-4 p-3 bg-green-50 border border-green-200 rounded">
-                <p class="text-xs font-bold text-green-800 mb-2">✅ PASSO A PASSO RÁPIDO:</p>
-                <ol class="text-xs text-gray-700 space-y-1 list-decimal list-inside">
-                    <li>Clique no botão roxo acima ☝️</li>
-                    <li>Faça login no Groq (email ou Google)</li>
-                    <li>Clique "Create API Key"</li>
-                    <li>Dê um nome qualquer (ex: "CTI")</li>
-                    <li>Copie a chave (começa com gsk_)</li>
-                    <li>Cole aqui e salve</li>
-                </ol>
-                <p class="text-xs text-green-700 mt-2 font-bold">💰 100% GRATUITO - Sem cartão de crédito!</p>
+            
+            <div class="mb-3 p-2 bg-gray-50 border rounded text-[10px] text-gray-500">
+                💡 Chaves armazenadas apenas no seu navegador (localStorage). 100% gratuitas, sem cartão.
             </div>
 
             <div class="flex gap-2">
+                <button onclick="app.testarConexaoIA()" class="bg-green-600 text-white px-4 py-2 rounded font-bold hover:bg-green-700 text-sm">
+                    🧪 Testar
+                </button>
                 <button onclick="app.salvarApiKey()" class="flex-1 bg-blue-600 text-white px-4 py-2 rounded font-bold hover:bg-blue-700">
                     Salvar Configuração
                 </button>
@@ -2548,7 +2572,12 @@ GASOMETRIA ARTERIAL:
             
             <div class="mb-4">
                 <label class="text-sm font-bold text-gray-700 block mb-2">📋 Conduta a ser tomada na Enfermaria:</label>
-                <textarea id="alta-conduta-enfermaria" class="w-full border border-gray-300 rounded p-2 text-sm" rows="5" placeholder="Ex: Manter antibioticoterapia por mais 5 dias, controle de glicemia capilar 4x/dia, fisioterapia motora e respiratória, dieta branda hipossódica..."></textarea>
+                <textarea id="alta-conduta-enfermaria" class="w-full border border-gray-300 rounded p-2 text-sm" rows="4" placeholder="Ex: Manter antibioticoterapia por mais 5 dias, controle de glicemia capilar 4x/dia..."></textarea>
+            </div>
+            
+            <div class="mb-4">
+                <label class="text-sm font-bold text-gray-700 block mb-2">📝 Orientações Pós-Alta / Observações:</label>
+                <textarea id="alta-orientacoes" class="w-full border border-gray-300 rounded p-2 text-sm" rows="3" placeholder="Ex: Retorno ambulatorial em 7 dias, curativo de CVC a cada 48h, sinais de alarme..."></textarea>
             </div>
             
             <div class="bg-blue-50 p-3 rounded border border-blue-200 mb-4">
@@ -2592,7 +2621,10 @@ GASOMETRIA ARTERIAL:
                             <span class="med-label">PACIENTE</span>
                         </div>
                         <div class="med-card-body p-1 flex flex-col gap-0.5">
-                            <input type="text" class="med-input font-bold uppercase border-none bg-transparent px-2 text-sm" data-key="paciente_nome" oninput="app.handleInput(this); app.sanitize(this)" placeholder="NOME">
+                            <div class="flex items-center gap-2">
+                                <input type="text" class="med-input font-bold uppercase border-none bg-transparent px-2 text-sm flex-1" data-key="paciente_nome" oninput="app.handleInput(this); app.sanitize(this)" placeholder="NOME">
+                                <span class="text-xs font-bold text-gray-500 whitespace-nowrap paciente-idade-badge" title="Idade do paciente"></span>
+                            </div>
                             <div class="flex gap-2 px-2 flex-wrap">
                                 <div class="flex items-center gap-1 text-xs">
                                     <span class="text-gray-500 font-semibold">⚖️</span>
@@ -2637,8 +2669,8 @@ GASOMETRIA ARTERIAL:
                             </div>
                             <button class="text-red-300 hover:text-red-600 text-[10px] font-bold remove-day-btn no-print no-read-mode opacity-60 hover:opacity-100 transition" title="Excluir este dia">🗑️</button>
                         </div>
-                        <div class="med-card-body p-1 justify-center">
-                            <span class="text-xs text-gray-400 italic no-print">Clique acima para gerar texto consolidado da evolução</span>
+                        <div class="med-card-body p-1 justify-center overflow-hidden" style="max-height: 120px;">
+                            <span class="comorbidades-resumo text-[10px] text-gray-400 italic leading-tight no-print" style="display: -webkit-box; -webkit-line-clamp: 7; -webkit-box-orient: vertical; overflow: hidden; word-break: break-word;">Comorbidades serão exibidas aqui</span>
                         </div>
                     </div>
                 </div>
@@ -3940,14 +3972,17 @@ GASOMETRIA ARTERIAL:
                     try {
                         const val = el.dataset.path.split('.').reduce((o, i) => (o ? o[i] : null), data);
                         el.value = val || '';
-                        // Auto-resize textareas da admissão
-                        if (el.tagName === 'TEXTAREA') {
-                            setTimeout(() => app.autoResize(el), 0);
-                        }
                     } catch (e) {
                         console.error('Erro ao preencher campo admissão:', el.dataset.path, e);
                     }
                 });
+                
+                // Auto-resize textareas da admissão (com delay para garantir renderização)
+                setTimeout(() => {
+                    document.querySelectorAll('#view-admissao textarea[data-path]').forEach(el => {
+                        if (el.value) app.autoResize(el);
+                    });
+                }, 100);
                 
                 // Renderizar dias de evolução
                 const container = document.getElementById('container-dias');
@@ -3988,6 +4023,23 @@ GASOMETRIA ARTERIAL:
                                 console.error('Erro ao preencher campo dia:', el.dataset.key, e);
                             }
                         });
+                        
+                        // Preencher idade do paciente
+                        const idadeBadge = root.querySelector('.paciente-idade-badge');
+                        if (idadeBadge && data.admissao?.idade) {
+                            idadeBadge.textContent = `${data.admissao.idade} anos`;
+                        }
+                        
+                        // Preencher comorbidades no espaço do consolidado
+                        const comorbSpan = root.querySelector('.comorbidades-resumo');
+                        if (comorbSpan && data.admissao?.comorbidades) {
+                            const comorb = data.admissao.comorbidades.trim();
+                            if (comorb) {
+                                comorbSpan.textContent = comorb;
+                                comorbSpan.classList.remove('text-gray-400', 'italic');
+                                comorbSpan.classList.add('text-gray-600');
+                            }
+                        }
                         
                         // CORREÇÃO: Recalcular "Dia Atual" automaticamente após carregar dados
                         setTimeout(() => {
@@ -4809,8 +4861,17 @@ GASOMETRIA ARTERIAL:
             if(!state.currentData.passometros) state.currentData.passometros = [];
             state.currentData.passometros.push(novo);
             
+            // SALVAR IMEDIATAMENTE no localStorage + Firebase (bypass handleInput/anti-loop)
+            try {
+                const db = DB.get(STORAGE_KEYS.DB);
+                db[state.currentBoxId] = state.currentData;
+                DB.set(STORAGE_KEYS.DB, db);
+                saveToFirebase(state.currentBoxId, state.currentData);
+            } catch(e) {
+                console.error('Erro ao salvar novo dia:', e);
+            }
+            
             app.renderDetail(state.currentData);
-            app.handleInput({closest:()=>null, dataset:{}});
             
             // Aplicar auto-resize nos novos textareas
             setTimeout(() => {
@@ -5131,15 +5192,32 @@ GASOMETRIA ARTERIAL:
                 }
             }
             app.renderDetail(state.currentData);
-            app.handleInput({ closest: () => null, dataset: {} });
+            
+            // SALVAR IMEDIATAMENTE (bypass handleInput/anti-loop)
+            try {
+                const db = DB.get(STORAGE_KEYS.DB);
+                db[state.currentBoxId] = state.currentData;
+                DB.set(STORAGE_KEYS.DB, db);
+                saveToFirebase(state.currentBoxId, state.currentData);
+            } catch(e) {}
         };
 
         // REMOVER DIA
         app.removeDay = async (idx) => {
             if(confirm('⚠️ Remover este dia de evolução?')) {
                 state.currentData.passometros.splice(idx, 1);
+                
+                // SALVAR IMEDIATAMENTE (bypass handleInput/anti-loop)
+                try {
+                    const db = DB.get(STORAGE_KEYS.DB);
+                    db[state.currentBoxId] = state.currentData;
+                    DB.set(STORAGE_KEYS.DB, db);
+                    saveToFirebase(state.currentBoxId, state.currentData);
+                } catch(e) {
+                    console.error('Erro ao salvar remoção:', e);
+                }
+                
                 app.renderDetail(state.currentData);
-                app.handleInput({closest:()=>null, dataset:{}});
                 app.showNotification('🗑️ Dia removido', 'warning');
             }
         };
@@ -5460,6 +5538,13 @@ GASOMETRIA ARTERIAL:
                     document.querySelectorAll('textarea').forEach(t => app.autoResize(t));
                 }, 100);
             }
+            if(aba==='admissao') {
+                setTimeout(() => {
+                    document.querySelectorAll('#view-admissao textarea[data-path]').forEach(t => {
+                        if (t.value) app.autoResize(t);
+                    });
+                }, 100);
+            }
             if(aba==='passograma') {
                 setTimeout(() => app.atualizarPassograma(), 150);
             }
@@ -5469,47 +5554,102 @@ GASOMETRIA ARTERIAL:
         // GERAÇÃO COM IA CLAUDE
         // ============================================
         app.loadApiKey = () => {
-            // Chave padrão pré-configurada
-            const defaultKey = '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';
+            const defaultGroqKey = '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';
             
-            // Usar chave do localStorage ou padrão
-            state.apiKey = localStorage.getItem(STORAGE_KEYS.API_KEY) || defaultKey;
+            state.iaProvider = localStorage.getItem('PASSOMETRO_IA_PROVIDER') || 'groq';
+            state.apiKey = localStorage.getItem(STORAGE_KEYS.API_KEY) || defaultGroqKey;
+            state.geminiKey = localStorage.getItem('PASSOMETRO_GEMINI_KEY') || '';
             
-            // Se não tinha chave salva, salvar a padrão
             if (!localStorage.getItem(STORAGE_KEYS.API_KEY)) {
-                localStorage.setItem(STORAGE_KEYS.API_KEY, defaultKey);
+                localStorage.setItem(STORAGE_KEYS.API_KEY, defaultGroqKey);
             }
         };
 
         app.abrirConfig = () => {
-            const inputEl = document.getElementById('api-key-input');
+            const groqInput = document.getElementById('api-key-input');
+            const geminiInput = document.getElementById('gemini-key-input');
             const modalEl = document.getElementById('config-modal');
-            if (inputEl) {
-                inputEl.value = state.apiKey || '';
-            }
-            if (modalEl) {
-                modalEl.classList.add('active');
-            }
+            
+            if (groqInput) groqInput.value = state.apiKey || '';
+            if (geminiInput) geminiInput.value = state.geminiKey || '';
+            
+            // Selecionar provedor atual
+            const radio = document.querySelector(`input[name="ia-provider"][value="${state.iaProvider || 'groq'}"]`);
+            if (radio) radio.checked = true;
+            app.toggleIAProvider();
+            
+            if (modalEl) modalEl.classList.add('active');
+        };
+        
+        app.toggleIAProvider = () => {
+            const selected = document.querySelector('input[name="ia-provider"]:checked')?.value || 'groq';
+            document.getElementById('config-groq').classList.toggle('hidden', selected !== 'groq');
+            document.getElementById('config-gemini').classList.toggle('hidden', selected !== 'gemini');
         };
 
         app.fecharModal = () => {
             const modalEl = document.getElementById('config-modal');
-            if (modalEl) {
-                modalEl.classList.remove('active');
-            }
+            if (modalEl) modalEl.classList.remove('active');
         };
 
         app.salvarApiKey = () => {
-            const key = document.getElementById('api-key-input').value.trim();
-            if(!key) {
-                app.showNotification('⚠️ Digite uma API Key válida', 'warning');
+            const provider = document.querySelector('input[name="ia-provider"]:checked')?.value || 'groq';
+            const groqKey = document.getElementById('api-key-input').value.trim();
+            const geminiKey = document.getElementById('gemini-key-input').value.trim();
+            
+            if (provider === 'groq' && !groqKey) {
+                app.showNotification('⚠️ Digite a API Key Groq', 'warning');
+                return;
+            }
+            if (provider === 'gemini' && !geminiKey) {
+                app.showNotification('⚠️ Digite a API Key Gemini', 'warning');
                 return;
             }
             
-            localStorage.setItem(STORAGE_KEYS.API_KEY, key);
-            state.apiKey = key;
+            localStorage.setItem('PASSOMETRO_IA_PROVIDER', provider);
+            localStorage.setItem(STORAGE_KEYS.API_KEY, groqKey);
+            localStorage.setItem('PASSOMETRO_GEMINI_KEY', geminiKey);
+            
+            state.iaProvider = provider;
+            state.apiKey = groqKey;
+            state.geminiKey = geminiKey;
+            
             app.fecharModal();
-            app.showNotification('✅ API Key configurada com sucesso', 'success');
+            app.showNotification(`✅ IA configurada: ${provider === 'groq' ? 'Groq (Llama 3.3)' : 'Gemini (Google)'}`, 'success');
+        };
+        
+        // Testar conexão com a IA
+        app.testarConexaoIA = async () => {
+            // Salvar temporariamente as configurações do modal
+            const provider = document.querySelector('input[name="ia-provider"]:checked')?.value || 'groq';
+            const groqKey = document.getElementById('api-key-input').value.trim();
+            const geminiKey = document.getElementById('gemini-key-input').value.trim();
+            
+            // Backup
+            const backupProvider = state.iaProvider;
+            const backupGroq = state.apiKey;
+            const backupGemini = state.geminiKey;
+            
+            state.iaProvider = provider;
+            state.apiKey = groqKey;
+            state.geminiKey = geminiKey;
+            
+            app.showNotification('🧪 Testando conexão...', 'info');
+            
+            try {
+                const resposta = await app.chamarIA(
+                    'Responda APENAS com: "Conexão OK"',
+                    'Teste de conexão. Responda apenas "Conexão OK".',
+                    50
+                );
+                app.showNotification(`✅ ${provider === 'groq' ? 'Groq' : 'Gemini'}: ${resposta.substring(0, 50)}`, 'success');
+            } catch (e) {
+                app.showNotification(`❌ Falha: ${e.message}`, 'error');
+                // Restaurar backup
+                state.iaProvider = backupProvider;
+                state.apiKey = backupGroq;
+                state.geminiKey = backupGemini;
+            }
         };
 
         app.generate = async (btn, periodo) => {
@@ -5661,15 +5801,9 @@ Formate de forma profissional e legível.`;
         // ============================================
         app.chamarIA = async (systemPrompt, userPrompt, maxTokens = 1500) => {
             // Auto-carregar API key se não estiver no state
-            if (!state.apiKey || state.apiKey.trim() === '') {
-                app.loadApiKey();
-            }
+            if (!state.iaProvider) app.loadApiKey();
             
-            if (!state.apiKey || state.apiKey.trim() === '') {
-                throw new Error('API Key não configurada. Configure em Configurações (⚙️).');
-            }
-            
-            // ANTI-ALUCINAÇÃO: Injetar guard universal em TODOS os prompts
+            // ANTI-ALUCINAÇÃO: Guard universal
             const antiHallucination = `
 
 REGRA ANTI-ALUCINAÇÃO (PRIORIDADE MÁXIMA):
@@ -5680,10 +5814,48 @@ REGRA ANTI-ALUCINAÇÃO (PRIORIDADE MÁXIMA):
 - Antes de incluir qualquer informação, CONFIRME mentalmente que ela existe nos dados do paciente
 - Em caso de DÚVIDA sobre a existência de um dado, OMITA`;
             
-            const systemPromptReforced = systemPrompt + antiHallucination;
+            const fullSystemPrompt = systemPrompt + antiHallucination;
             
-            // Usar Groq API
-            let response;
+            let response, text;
+            
+            // ═══ GEMINI ═══
+            if (state.iaProvider === 'gemini') {
+                if (!state.geminiKey) {
+                    throw new Error('API Key Gemini não configurada. Configure em ⚙️ IA.');
+                }
+                
+                try {
+                    response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${state.geminiKey}`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({
+                            contents: [{ parts: [{ text: fullSystemPrompt + '\n\n' + userPrompt }] }],
+                            generationConfig: { temperature: 0.05, maxOutputTokens: maxTokens }
+                        })
+                    });
+                } catch (fetchError) {
+                    throw new Error('Falha na conexão com a API Gemini.');
+                }
+                
+                if (!response.ok) {
+                    const err = await response.json().catch(() => ({}));
+                    if (response.status === 400 && err.error?.message?.includes('API_KEY')) {
+                        throw new Error('API Key Gemini inválida. Atualize em ⚙️ IA.');
+                    }
+                    throw new Error(err.error?.message || `Erro Gemini: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+                if (!text) throw new Error('Resposta vazia do Gemini');
+                return text;
+            }
+            
+            // ═══ GROQ (padrão) ═══
+            if (!state.apiKey || state.apiKey.trim() === '') {
+                throw new Error('API Key Groq não configurada. Configure em ⚙️ IA.');
+            }
+            
             try {
                 response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
                     method: 'POST',
@@ -5694,7 +5866,7 @@ REGRA ANTI-ALUCINAÇÃO (PRIORIDADE MÁXIMA):
                     body: JSON.stringify({
                         model: 'llama-3.3-70b-versatile',
                         messages: [
-                            { role: 'system', content: systemPromptReforced },
+                            { role: 'system', content: fullSystemPrompt },
                             { role: 'user', content: userPrompt }
                         ],
                         temperature: 0.05,
@@ -5702,28 +5874,24 @@ REGRA ANTI-ALUCINAÇÃO (PRIORIDADE MÁXIMA):
                     })
                 });
             } catch (fetchError) {
-                throw new Error('Falha na conexão com a API. Verifique sua internet e tente novamente.');
+                throw new Error('Falha na conexão com a API Groq.');
             }
             
             if (!response.ok) {
                 const errorData = await response.json().catch(() => ({}));
-                const msg = errorData.error?.message || '';
                 if (response.status === 401) {
-                    throw new Error('API Key inválida ou expirada. Atualize em Configurações (⚙️).');
+                    throw new Error('API Key Groq inválida ou expirada. Atualize em ⚙️ IA.');
                 } else if (response.status === 429) {
-                    throw new Error('Limite de requisições atingido. Aguarde 1 minuto e tente novamente.');
+                    throw new Error('Limite Groq atingido. Aguarde 1 minuto ou mude para Gemini em ⚙️ IA.');
                 }
-                throw new Error(msg || `Erro na API: ${response.status}`);
+                throw new Error(errorData.error?.message || `Erro Groq: ${response.status}`);
             }
             
             const data = await response.json();
+            if (data.error) throw new Error(data.error.message);
             
-            if (data.error) {
-                throw new Error(data.error.message);
-            }
-            
-            const text = data?.choices?.[0]?.message?.content;
-            if (!text) throw new Error('Resposta vazia da IA');
+            text = data?.choices?.[0]?.message?.content;
+            if (!text) throw new Error('Resposta vazia do Groq');
             return text;
         };
 
@@ -7330,13 +7498,23 @@ ${'</'+'script>'}</body></html>`);
                 return blocks;
             };
             
-            // Extrair data DD/MM de texto LAB
+            // Extrair data DD/MM + qualificador de turno de texto LAB
             const extractLabDate = (block) => {
-                const m = block.toUpperCase().match(/(?:^[\s→\-]*)LAB\s+(\d{1,2})[\/\-](\d{1,2})/);
-                if (m) return m[1].padStart(2,'0') + '/' + m[2].padStart(2,'0');
-                // Fallback: qualquer padrão dd/mm no início do texto
-                const m2 = block.toUpperCase().match(/(\d{1,2})[\/\-](\d{1,2})/);
-                if (m2) return m2[1].padStart(2,'0') + '/' + m2[2].padStart(2,'0');
+                const upper = block.toUpperCase();
+                // Padrão: LAB DD/MM [QUALIFICADOR]
+                const m = upper.match(/(?:^[\s→\-]*)LAB\s+(\d{1,2})[\/\-](\d{1,2})(?:[\/\-]\d{2,4})?\s*[:\-]?\s*(TARDE|MANHÃ|MANHA|NOITE|MADRUGADA)?/);
+                if (m) {
+                    let label = m[1].padStart(2,'0') + '/' + m[2].padStart(2,'0');
+                    if (m[3]) label += ' ' + m[3].charAt(0); // T, M, N
+                    return label;
+                }
+                // Fallback sem LAB prefix: DD/MM [QUALIFICADOR]
+                const m2 = upper.match(/(\d{1,2})[\/\-](\d{1,2})(?:[\/\-]\d{2,4})?\s*[:\-]?\s*(TARDE|MANHÃ|MANHA|NOITE|MADRUGADA)?/);
+                if (m2) {
+                    let label = m2[1].padStart(2,'0') + '/' + m2[2].padStart(2,'0');
+                    if (m2[3]) label += ' ' + m2[3].charAt(0);
+                    return label;
+                }
                 return null;
             };
             
@@ -7349,20 +7527,27 @@ ${'</'+'script>'}</body></html>`);
                 } catch(e) { return null; }
             };
             
-            // Converter DD/MM para sortable number (MM*100+DD) para ordenação cronológica
+            // Converter DD/MM[sufixo] para sortable number para ordenação cronológica
             const dateToSort = (ddmm) => {
-                const parts = ddmm.split('/');
+                // Extrair apenas DD/MM, ignorar sufixo de turno
+                const clean = ddmm.replace(/\s+[A-Z]$/, '').trim();
+                const parts = clean.split('/');
                 if (parts.length !== 2) return 99999;
                 const dd = parseInt(parts[0]) || 0;
                 const mm = parseInt(parts[1]) || 0;
-                return mm * 100 + dd;
+                let sort = mm * 10000 + dd * 10;
+                // Turno: M=1, T=2, N=3 (ordenar dentro do mesmo dia)
+                if (ddmm.endsWith(' M')) sort += 1;
+                else if (ddmm.endsWith(' T')) sort += 2;
+                else if (ddmm.endsWith(' N')) sort += 3;
+                return sort;
             };
             
             // ═══ COLETA DE DADOS - MERGE POR DATA ═══
             // Map<dateLabel, { parsed: {key: value}, order: number }>
             const dateMap = new Map();
             
-            // Merge parsed values into dateMap (novos valores NÃO sobrescrevem existentes)
+            // Merge parsed values into dateMap (valores NOVOS SOBRESCREVEM existentes para mesma data)
             const mergeIntoDate = (dateLabel, parsed) => {
                 if (!dateLabel || Object.keys(parsed).length === 0) return;
                 
@@ -7370,11 +7555,9 @@ ${'</'+'script>'}</body></html>`);
                     dateMap.set(dateLabel, { parsed: {}, order: dateToSort(dateLabel) });
                 }
                 const entry = dateMap.get(dateLabel);
-                // Merge: apenas adicionar chaves novas (preservar primeiro valor encontrado)
+                // Merge: ATUALIZAR com valores mais recentes (sobrescreve)
                 Object.keys(parsed).forEach(key => {
-                    if (!entry.parsed[key]) {
-                        entry.parsed[key] = parsed[key];
-                    }
+                    entry.parsed[key] = parsed[key];
                 });
             };
             
@@ -7414,8 +7597,15 @@ ${'</'+'script>'}</body></html>`);
                 const admDate = isoToLabel(state.currentData.admissao?.data) || 'Adm';
                 
                 if (blocks.length > 0) {
+                    const usedLabels = new Set();
                     blocks.forEach(block => {
-                        const labDate = extractLabDate(block) || admDate;
+                        let labDate = extractLabDate(block) || admDate;
+                        if (usedLabels.has(labDate)) {
+                            let suffix = 2;
+                            while (usedLabels.has(`${labDate}(${suffix})`)) suffix++;
+                            labDate = `${labDate}(${suffix})`;
+                        }
+                        usedLabels.add(labDate);
                         mergeIntoDate(labDate, app.parseExamText(block));
                     });
                 } else {
@@ -7433,8 +7623,17 @@ ${'</'+'script>'}</body></html>`);
                 const blocks = splitLABBlocks(exameText);
                 
                 if (blocks.length > 0) {
+                    // Rastrear labels usados NESTE dia para evitar sobreposição
+                    const usedLabels = new Set();
                     blocks.forEach(block => {
-                        const labDate = extractLabDate(block) || dayDate;
+                        let labDate = extractLabDate(block) || dayDate;
+                        // Se label já usado neste dia, adicionar sufixo numérico
+                        if (usedLabels.has(labDate)) {
+                            let suffix = 2;
+                            while (usedLabels.has(`${labDate}(${suffix})`)) suffix++;
+                            labDate = `${labDate}(${suffix})`;
+                        }
+                        usedLabels.add(labDate);
                         mergeIntoDate(labDate, app.parseExamText(block));
                     });
                 } else {
@@ -7844,6 +8043,7 @@ ${'</'+'script>'}
             texto += campo('ANTIBIÓTICOS', getLista(ultimoDia.lista_atb));
             texto += campo('CULTURAS', ultimoDia.culturas);
             texto += campo('GASOMETRIAS', ultimoDia.gaso);
+            texto += campo('VM / O2 SUPLEMENTAR', ultimoDia.vm);
             
             // Evolução conforme turno (sem referência diurna no noturno)
             const evoTitulo = turno === 'diurno' ? 'EVOLUÇÃO MÉDICA - DIA' : 'EVOLUÇÃO MÉDICA - NOITE';
@@ -8010,6 +8210,7 @@ ${'</'+'script>'}
             texto += sec('ANTIBIÓTICOS', antibioticos);
             texto += sec('CULTURAS', dia.culturas);
             texto += sec('GASOMETRIAS', dia.gaso);
+            texto += sec('VM / O2 SUPLEMENTAR', dia.vm);
             
             // Evolução conforme turno (sem referência diurna no noturno)
             texto += sec(evoTitulo, dia[evoKey]);
@@ -8407,6 +8608,7 @@ ${'</'+'script>'}
 
         app.confirmarSumarioAlta = async () => {
             const condutaEnfermaria = document.getElementById('alta-conduta-enfermaria').value.trim();
+            const orientacoes = document.getElementById('alta-orientacoes')?.value?.trim() || '';
             if (!condutaEnfermaria) {
                 alert('Por favor, informe a conduta a ser tomada na enfermaria.');
                 return;
@@ -8416,6 +8618,7 @@ ${'</'+'script>'}
             const dados = app.coletarDadosCompletos();
             const admissao = state.currentData.admissao || {};
             const dias = state.currentData.passometros || [];
+            const ultimoDia = dias[dias.length - 1] || {};
             
             // Helper: omitir se vazio
             const sec = (t, v) => {
@@ -8423,8 +8626,7 @@ ${'</'+'script>'}
                 return val ? `${t}\n${val}\n\n` : '';
             };
             
-            // Formatar data
-            const fmtData = (d) => {
+            const fmtBR = (d) => {
                 if (!d) return '';
                 const p = d.split('-');
                 return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
@@ -8432,47 +8634,93 @@ ${'</'+'script>'}
             
             let sumario = 'CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE ALTA\n\n';
             
-            // IDENTIFICAÇÃO
-            sumario += sec('IDENTIFICAÇÃO', `${dados.nome}, ${dados.idade} anos${dados.sexo ? ', ' + dados.sexo : ''}\nAdmissão CTI: ${dados.dataAdmissaoBR || 'Não informado'} | Dias de internação: ${dados.diasInternacao}`);
+            // ═══ IDENTIFICAÇÃO ═══
+            let ident = `${dados.nome}, ${dados.idade} anos`;
+            if (dados.sexo) ident += `, ${dados.sexo}`;
+            ident += `\nAdmissão CTI: ${dados.dataAdmissaoBR || '-'} | Alta: ${new Date().toLocaleDateString('pt-BR')} | Internação: ${dados.diasInternacao} dia(s)`;
+            if (dados.peso) ident += ` | Peso: ${dados.peso}kg`;
+            if (dados.cockcroft) ident += ` | ClCr: ${dados.cockcroft} mL/min`;
+            sumario += sec('IDENTIFICAÇÃO', ident);
             
+            // ═══ DADOS CLÍNICOS ═══
             sumario += sec('HISTÓRIA CLÍNICA', admissao.historia_clinica);
             sumario += sec('COMORBIDADES', admissao.comorbidades);
-            sumario += sec('MEDICAMENTOS DE USO HABITUAL', admissao.medicamentos_habituais);
+            sumario += sec('ALERGIAS', admissao.alergias);
+            sumario += sec('MEDICAMENTOS DE USO HABITUAL (PRÉ-INTERNAÇÃO)', admissao.medicamentos_habituais);
+            
+            // ═══ DIAGNÓSTICOS ═══
             sumario += sec('DIAGNÓSTICO PRIMÁRIO', dados.diagPrimario);
             sumario += sec('DIAGNÓSTICO SECUNDÁRIO', dados.diagSecundario);
             
-            // ÚLTIMA EVOLUÇÃO (apenas dia OU noite do último dia)
-            if (dados.ultimaEvolucao) {
-                sumario += sec('ÚLTIMA EVOLUÇÃO MÉDICA', dados.ultimaEvolucao);
-            }
+            // ═══ VM / SUPORTE VENTILATÓRIO ═══
+            sumario += sec('VM / O2 SUPLEMENTAR', dados.vm);
             
-            // INVASIVOS com datas
+            // ═══ DISPOSITIVOS ═══
             sumario += sec('DISPOSITIVOS INVASIVOS', dados.invasivos.length > 0 ? dados.invasivos.join('\n') : '');
             sumario += sec('ANTIMICROBIANOS', dados.antibioticos.length > 0 ? dados.antibioticos.join('\n') : '');
-            sumario += sec('CULTURAS', dados.culturas);
+            sumario += sec('CULTURAS E MICROBIOLOGIA', dados.culturas);
             
-            // TODOS OS EXAMES de todos os dias
+            // ═══ TODOS OS EXAMES LABORATORIAIS (todos os dias) ═══
             if (dados.todosExames.length > 0) {
                 sumario += 'EXAMES LABORATORIAIS\n';
                 dados.todosExames.forEach(ex => { sumario += `${ex.texto}\n`; });
                 sumario += '\n';
             }
             
-            sumario += sec('GASOMETRIAS', dados.gasometrias);
+            // ═══ OUTROS EXAMES (imagem, ECG, etc) ═══
+            const todosOutrosExames = [];
+            dias.forEach((d, idx) => {
+                if (d.exames_outros && d.exames_outros.trim()) {
+                    todosOutrosExames.push(d.exames_outros.trim());
+                }
+            });
+            if (todosOutrosExames.length > 0) {
+                sumario += sec('OUTROS EXAMES', todosOutrosExames.join('\n'));
+            }
             
-            // BALANÇO HÍDRICO
+            // ═══ GASOMETRIAS ═══
+            if (dados.todasGasometrias && dados.todasGasometrias.length > 0) {
+                sumario += 'GASOMETRIAS\n';
+                dados.todasGasometrias.forEach(g => {
+                    sumario += `${g.data ? g.data + ': ' : ''}${g.texto}\n`;
+                });
+                sumario += '\n';
+            } else {
+                sumario += sec('GASOMETRIAS', dados.gasometrias);
+            }
+            
+            // ═══ SINAIS VITAIS (último dia) ═══
+            const sinais = [];
+            if (ultimoDia.vit_glic_ant) sinais.push(`Glicemias: ${ultimoDia.vit_glic_ant}`);
+            if (ultimoDia.vit_febre_ant) sinais.push(`Temperatura: ${ultimoDia.vit_febre_ant}`);
+            if (ultimoDia.vit_diu_ant) sinais.push(`Diurese: ${ultimoDia.vit_diu_ant}`);
+            if (ultimoDia.vit_evac_ant) sinais.push(`Evacuações: ${ultimoDia.vit_evac_ant}`);
+            if (ultimoDia.vit_dre_ant) sinais.push(`Drenos: ${ultimoDia.vit_dre_ant}`);
+            if (sinais.length > 0) sumario += sec('SINAIS VITAIS (ÚLTIMO DIA)', sinais.join('\n'));
+            
+            // ═══ BALANÇO HÍDRICO ═══
             let bh = [];
-            if (dados.bhAnt) bh.push(`Anterior: ${dados.bhAnt}`);
-            if (dados.bhAcumulado) bh.push(`Acumulado: ${dados.bhAcumulado}`);
-            if (dados.bhAcumPI) bh.push(`Acum c/ PI: ${dados.bhAcumPI}`);
+            if (ultimoDia.bh_ant) bh.push(`Anterior: ${ultimoDia.bh_ant}`);
+            if (ultimoDia.bh_atual) bh.push(`Dia Atual: ${ultimoDia.bh_atual}`);
+            if (ultimoDia.bh_acumulado) bh.push(`Acumulado: ${ultimoDia.bh_acumulado}`);
+            if (ultimoDia.bh_acum_pi) bh.push(`Acum c/ PI: ${ultimoDia.bh_acum_pi}`);
             if (bh.length > 0) sumario += sec('BALANÇO HÍDRICO', bh.join(' | '));
             
+            // ═══ NUTRIÇÃO E HEMOTERAPIA ═══
+            sumario += sec('NUTRIÇÃO', dados.nutrição);
+            sumario += sec('HEMOTERAPIA', dados.hemoterapia);
+            
+            // ═══ ÚLTIMA EVOLUÇÃO ═══
+            sumario += sec('ÚLTIMA EVOLUÇÃO MÉDICA', dados.ultimaEvolucao);
+            
+            // ═══ MEDICAMENTOS E CONDUTA ═══
             sumario += sec('MEDICAMENTOS EM USO NA ALTA', dados.medicamentosAtuais);
             sumario += sec('CONDUTA PARA ENFERMARIA', condutaEnfermaria);
+            sumario += sec('ORIENTAÇÕES PÓS-ALTA', orientacoes);
+            sumario += sec('PARECER DE ESPECIALISTA', dados.parecer);
             
-            // DRG HOSPITALAR
+            // ═══ DRG HOSPITALAR ═══
             sumario += '---\n\nRESUMO DRG HOSPITALAR\n\n';
-            // Coletar todos diagnósticos com CID de todos os dias
             const allDiags = new Set();
             dias.forEach(d => {
                 [d.diag_primario, d.diag_secundario].forEach(txt => {
@@ -8493,27 +8741,27 @@ ${'</'+'script>'}
                 sumario += '\n';
             }
             
-            sumario += `Gerado em: ${new Date().toLocaleString('pt-BR')}`;
+            sumario += `Gerado em: ${new Date().toLocaleString('pt-BR')}\n`;
+            sumario += `Médico responsável: ${currentUser?.name || '_______________'}`;
             
-            // Tentar otimizar com IA se disponível
-            if (state.apiKey) {
+            // IA opcional para polir
+            if (state.iaProvider && (state.apiKey || state.geminiKey)) {
                 try {
                     app.showNotification('🤖 Otimizando com IA...', 'info');
-                    const iaPrompt = `Você é um médico intensivista. Receba este sumário de alta BRUTO e REORGANIZE-o de forma profissional. 
+                    const iaPrompt = `Você é um médico intensivista. Receba este SUMÁRIO DE ALTA bruto e REORGANIZE de forma profissional para colar em prontuário eletrônico.
 
 REGRAS ABSOLUTAS:
 1. Use APENAS dados presentes no texto — NUNCA invente informações
-2. Reescreva a história clínica em texto corrido profissional (não copie literal)
-3. Mantenha TODOS os exames, datas e valores exatamente como estão
+2. Reescreva a história clínica em texto corrido profissional
+3. Mantenha TODOS os exames, valores e datas EXATAMENTE como estão
 4. Mantenha a estrutura de seções com títulos
-5. OMITA seções que contenham apenas "SEM INFORMAÇÕES"
-6. Mantenha o cabeçalho FHSVP e o DRG intactos
-7. Máximo 1500 palavras`;
+5. OMITA seções vazias
+6. Mantenha o cabeçalho FHSVP, DRG e orientações intactos
+7. Máximo 2000 palavras`;
                     
-                    const otimizado = await app.chamarIA(iaPrompt, `Reorganize este sumário:\n\n${sumario}`, 4000);
+                    const otimizado = await app.chamarIA(iaPrompt, `Reorganize:\n\n${sumario}`, 4000);
                     sumario = otimizado;
                 } catch (e) {
-                    // Sem IA, usar sumário bruto (já gerado)
                     console.warn('IA indisponível, usando sumário bruto');
                 }
             }
