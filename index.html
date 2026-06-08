@@ -3472,10 +3472,23 @@ GASOMETRIA ARTERIAL:
             });
 
             // Listener para arquivo morto
+            // HOTFIX 2026-06: COMPAT — após mudança para push(), Firebase retorna OBJETO
+            //   { "-N_pushKey1": {...}, "-N_pushKey2": {...} }
+            // Antes era ARRAY: [{...}, {...}]
+            // Normalizamos para array antes de persistir local + render.
             const archiveRef = database.ref('archive');
             archiveRef.on('value', (snapshot) => {
                 if (!snapshot.exists()) return;
-                const archiveData = snapshot.val() || [];
+                const raw = snapshot.val();
+                let archiveData;
+                if (Array.isArray(raw)) {
+                    archiveData = raw;
+                } else if (raw && typeof raw === 'object') {
+                    // converte objeto push() → array
+                    archiveData = Object.entries(raw).map(([k, v]) => ({ ...v, _firebaseKey: k }));
+                } else {
+                    archiveData = [];
+                }
                 localStorage.setItem(STORAGE_KEYS.ARCHIVE, JSON.stringify(archiveData));
                 app.carregarListaMorto();
             });
@@ -3650,15 +3663,29 @@ GASOMETRIA ARTERIAL:
         };
 
         // Salvar arquivo morto no Firebase
-        const saveArchiveToFirebase = (archiveData) => {
-            if (!database) return;
-
-            database.ref('archive').set(archiveData)
-                .then(() => {
-                })
-                .catch((error) => {
-                    console.error('❌ Erro ao salvar arquivo morto:', error);
-                });
+        /**
+         * HOTFIX 2026-06: archive agora usa push() em vez de set() do array.
+         * BUG: archive crescia indefinidamente; set() reescrevia tudo a cada alta.
+         * Quando archive passava de ~5MB, set silenciosamente travava → paciente sumia
+         * de boxes/{id} mas nunca chegava em archive/ = PERDA DE DADOS.
+         * Aceita 2 modos:
+         *   - novoItem (objeto único): push() — usado por darAltaCompleta (seguro)
+         *   - array + isFullSync=true: set() — uso legacy
+         * Retorna Promise para callers poderem await.
+         */
+        const saveArchiveToFirebase = (archiveDataOrItem, isFullSync = false) => {
+            if (!database) return Promise.resolve();
+            if (Array.isArray(archiveDataOrItem) && isFullSync) {
+                return database.ref('archive').set(archiveDataOrItem)
+                    .catch((err) => { console.error('❌ [archive/set] full-sync falhou:', err); throw err; });
+            }
+            const item = Array.isArray(archiveDataOrItem)
+                ? archiveDataOrItem[archiveDataOrItem.length - 1]
+                : archiveDataOrItem;
+            if (!item) return Promise.resolve();
+            return database.ref('archive').push(item)
+                .then((ref) => { console.log('[archive/push] ok', ref.key); return ref; })
+                .catch((err) => { console.error('❌ [archive/push] falhou:', err?.code || err?.message || err); throw err; });
         };
 
         // ============================================
@@ -4184,7 +4211,13 @@ GASOMETRIA ARTERIAL:
         // MANIPULAR INPUT
         app.handleInput = (el) => {
             if(state.isReadOnly) return;
-            
+            // HOTFIX 2026-06: durante darAltaCompleta, recálculos programáticos
+            // NÃO podem disparar save — evita re-gravar leito após limpar.
+            if (state._altaEmAndamento) {
+                console.log('[handleInput] skip (alta em andamento)');
+                return;
+            }
+
             // Determinar se é digitação real do usuário ou recálculo programático
             const isUserTyping = (document.activeElement === el);
             
@@ -6726,11 +6759,18 @@ ${'</'+'script>'}</body></html>`);
         // DAR ALTA COMPLETA - GERAR PDF E ARQUIVAR
         // ============================================
         app.darAltaCompleta = async () => {
-            
+            // HOTFIX 2026-06: cancelar debounces pendentes ANTES de tudo
+            // Sem isso, saveTimeout do debounce 800ms podia disparar DEPOIS de limpar
+            // o leito → restaurava paciente parcial = "leito zumbi"
+            clearTimeout(state.saveTimeout);
+            state.saveTimeout = null;
+            state._altaEmAndamento = true;   // handleInput vai respeitar
+
             // VALIDAÇÃO 1: Verificar se há paciente selecionado
             if (!state.currentBoxId || !state.currentData?.admissao?.nome) {
                 console.error('❌ [ALTA] Erro: Nenhum paciente selecionado');
                 app.showNotification('❌ Nenhum paciente para dar alta', 'error');
+                state._altaEmAndamento = false;
                 return;
             }
 
@@ -6789,13 +6829,23 @@ ${'</'+'script>'}</body></html>`);
                     if (!salvou) {
                         throw new Error('Falha ao salvar no localStorage');
                     }
-                    
-                    // Salvar no Firebase
+
+                    // HOTFIX 2026-06: AWAIT push() do item ÚNICO em archive/.
+                    // Sem isso, leito era limpo ANTES do archive confirmar = PERDA DE DADOS.
+                    // Se a Promise rejeitar (rede/quota), throw aborta o fluxo de alta
+                    // (médico vê erro, leito NÃO é limpo, dados ficam seguros).
                     if (typeof saveArchiveToFirebase === 'function') {
-                        saveArchiveToFirebase(arquivo);
+                        try {
+                            await saveArchiveToFirebase(dadosParaArquivar);
+                            console.log('[alta] archive/push confirmado');
+                        } catch (eArch) {
+                            console.error('❌ [ALTA] FIREBASE archive/push FALHOU:', eArch);
+                            throw new Error(`Falha ao gravar archive no Firebase: ${eArch?.message || eArch}. Leito NÃO foi limpo. Tente novamente.`);
+                        }
                     }
                 } catch (e) {
                     console.error('❌ [ALTA] ERRO CRÍTICO ao salvar no arquivo morto:', e);
+                    state._altaEmAndamento = false;  // libera para tentar de novo
                     throw new Error(`Erro ao salvar no arquivo morto: ${e.message}`);
                 }
 
@@ -6842,15 +6892,17 @@ ${'</'+'script>'}</body></html>`);
                             if (typeof app.voltarParaGrade === 'function') {
                                 app.voltarParaGrade();
                             }
-                            
+
                             if (typeof app.carregarListaMorto === 'function') {
                                 app.carregarListaMorto();
                             }
-                            
-                            
+                            // HOTFIX 2026-06: libera flag — alta concluída
+                            state._altaEmAndamento = false;
+
                         } catch (e) {
                             console.error('❌ [ALTA] Erro na etapa de limpeza:', e);
                             app.showNotification('⚠️ Alta concluída mas houve erro na limpeza: ' + e.message, 'warning');
+                            state._altaEmAndamento = false;
                         }
                     }, 1000);
                 }, 500);
@@ -6859,9 +6911,10 @@ ${'</'+'script>'}</body></html>`);
                 console.error('❌ [ALTA] ERRO GERAL:', error);
                 console.error('Stack trace:', error.stack);
                 app.showNotification('❌ Erro ao processar alta: ' + error.message, 'error');
-                
+
                 // Tentar restaurar estado
                 document.body.classList.remove('print-scope-full');
+                state._altaEmAndamento = false;  // HOTFIX 2026-06
             }
         };
 
