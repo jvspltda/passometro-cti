@@ -6919,67 +6919,83 @@ ${'</'+'script>'}</body></html>`);
         };
 
         app.confirmarAlta = async () => {
-            
+            // HOTFIX 2026-06: mesmos 3 fixes aplicados em darAltaCompleta
+            // (esta função alternativa também limpava leito antes do archive confirmar)
+            clearTimeout(state.saveTimeout);
+            state.saveTimeout = null;
+            state._altaEmAndamento = true;
+
             if(!confirm('⚠️ Confirmar ALTA ou ÓBITO deste paciente?\n\nO prontuário será arquivado e o leito liberado.')) {
+                state._altaEmAndamento = false;
                 return;
             }
-            
+
             try {
                 // Validação
                 if (!state.currentBoxId || !state.currentData) {
+                    state._altaEmAndamento = false;
                     throw new Error('Nenhum paciente selecionado');
                 }
-                
-                
+
                 // Arquivar
                 const arquivo = DB.get(STORAGE_KEYS.ARCHIVE);
-                
+
                 const dadosParaArquivar = {
                     ...state.currentData,
                     boxId: state.currentBoxId,
                     dataArquivamento: new Date().toISOString()
                 };
-                
+
                 arquivo.push(dadosParaArquivar);
-                
+
                 const salvou = DB.set(STORAGE_KEYS.ARCHIVE, arquivo);
                 if (!salvou) {
+                    state._altaEmAndamento = false;
                     throw new Error('Falha ao salvar no localStorage');
                 }
-                
-                // Salvar arquivo morto no Firebase
+
+                // HOTFIX 2026-06: AWAIT push() em archive — se rejeitar, ABORTA antes de limpar leito
                 if (typeof saveArchiveToFirebase === 'function') {
-                    saveArchiveToFirebase(arquivo);
+                    try {
+                        await saveArchiveToFirebase(dadosParaArquivar);
+                        console.log('[confirmarAlta] archive/push confirmado');
+                    } catch (eArch) {
+                        console.error('❌ [ALTA SIMPLES] FIREBASE archive/push FALHOU:', eArch);
+                        state._altaEmAndamento = false;
+                        throw new Error(`Falha ao gravar archive: ${eArch?.message || eArch}. Leito NÃO foi limpo. Tente novamente.`);
+                    }
                 }
-                
-                // Limpar box
+
+                // SÓ DEPOIS do archive confirmar — limpa box
                 const db = DB.get(STORAGE_KEYS.DB);
                 db[state.currentBoxId] = { admissao: {}, passometros: [] };
                 DB.set(STORAGE_KEYS.DB, db);
-                
+
                 // Limpar box no Firebase também
                 if (database) {
                     database.ref(`boxes/${state.currentBoxId}`).set({ admissao: {}, passometros: [] })
                         .catch(e => console.error('❌ [ALTA SIMPLES] Erro ao limpar box no Firebase:', e));
                 }
-                
+
                 app.showNotification('✅ Paciente arquivado com sucesso', 'success');
-                
+
                 // Resetar state
                 state.currentBoxId = null;
                 state.currentData = {};
-                
+
                 if (typeof app.voltarParaGrade === 'function') {
                     app.voltarParaGrade();
                 }
                 if (typeof app.carregarListaMorto === 'function') {
                     app.carregarListaMorto();
                 }
-                
+                state._altaEmAndamento = false;
+
             } catch (error) {
                 console.error('❌ [ALTA SIMPLES] ERRO:', error);
                 console.error('Stack trace:', error.stack);
                 app.showNotification('❌ Erro ao arquivar paciente: ' + error.message, 'error');
+                state._altaEmAndamento = false;
             }
         };
 
