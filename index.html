@@ -3472,25 +3472,53 @@ GASOMETRIA ARTERIAL:
             });
 
             // Listener para arquivo morto
-            // HOTFIX 2026-06: COMPAT — após mudança para push(), Firebase retorna OBJETO
-            //   { "-N_pushKey1": {...}, "-N_pushKey2": {...} }
-            // Antes era ARRAY: [{...}, {...}]
-            // Normalizamos para array antes de persistir local + render.
+            // HOTFIX 2026-06-3: archive completo passou de 5MB → estoura localStorage (~5MB quota).
+            // Estratégia: cache full em memória (state._archiveCache) + persistir SLIM
+            // (só nome+data+key) no localStorage como fallback offline para o select.
+            // abrirArquivoMorto puxa direto do Firebase quando precisa do entry full.
             const archiveRef = database.ref('archive');
             archiveRef.on('value', (snapshot) => {
-                if (!snapshot.exists()) return;
+                if (!snapshot.exists()) {
+                    state._archiveCache = [];
+                    try { localStorage.setItem(STORAGE_KEYS.ARCHIVE, '[]'); } catch(_) {}
+                    if (typeof app.carregarListaMorto === 'function') app.carregarListaMorto();
+                    return;
+                }
                 const raw = snapshot.val();
                 let archiveData;
                 if (Array.isArray(raw)) {
                     archiveData = raw;
                 } else if (raw && typeof raw === 'object') {
-                    // converte objeto push() → array
                     archiveData = Object.entries(raw).map(([k, v]) => ({ ...v, _firebaseKey: k }));
                 } else {
                     archiveData = [];
                 }
-                localStorage.setItem(STORAGE_KEYS.ARCHIVE, JSON.stringify(archiveData));
-                app.carregarListaMorto();
+                // Cache full em memória (sobrevive ao reload? NÃO. Mas é re-populado pelo listener).
+                state._archiveCache = archiveData;
+                console.log('[archive listener] populou cache com', archiveData.length, 'entries');
+
+                // Tentar salvar full no localStorage; se exceder quota, salvar SLIM.
+                const fullJson = JSON.stringify(archiveData);
+                let savedFull = false;
+                try {
+                    localStorage.setItem(STORAGE_KEYS.ARCHIVE, fullJson);
+                    savedFull = true;
+                } catch (eFull) {
+                    console.warn('[archive] localStorage cheio (' + (fullJson.length/1024/1024).toFixed(2) + 'MB) — salvando SLIM', eFull?.name);
+                    const slim = archiveData.map(e => ({
+                        _firebaseKey: e._firebaseKey,
+                        boxId: e.boxId,
+                        dataArquivamento: e.dataArquivamento,
+                        admissao: { nome: e?.admissao?.nome || '', tipo_alta: e?.admissao?.tipo_alta || '', alta_destino: e?.admissao?.alta_destino || '' },
+                        _slim: true,
+                    }));
+                    try {
+                        localStorage.setItem(STORAGE_KEYS.ARCHIVE, JSON.stringify(slim));
+                    } catch (eSlim) {
+                        console.error('[archive] até SLIM falhou no localStorage', eSlim);
+                    }
+                }
+                if (typeof app.carregarListaMorto === 'function') app.carregarListaMorto();
             });
 
         };
@@ -7050,8 +7078,13 @@ ${'</'+'script>'}</body></html>`);
                     return;
                 }
 
-                const arquivo = _normalizarArchive(DB.get(STORAGE_KEYS.ARCHIVE));
-                console.log('[carregarListaMorto] entries=', arquivo.length);
+                // HOTFIX 2026-06-3: preferir cache in-memory (listener Firebase popula state._archiveCache)
+                // porque archive >5MB não cabe no localStorage. localStorage é só fallback SLIM.
+                const fonte = (state._archiveCache && state._archiveCache.length)
+                    ? state._archiveCache
+                    : DB.get(STORAGE_KEYS.ARCHIVE);
+                const arquivo = _normalizarArchive(fonte);
+                console.log('[carregarListaMorto] entries=', arquivo.length, '(fonte:', state._archiveCache?.length ? 'memória' : 'localStorage', ')');
                 select.innerHTML = '<option value="">Buscar paciente...</option>';
 
                 // Mais recente primeiro: ordena por dataArquivamento desc (mais robusto que reverse)
@@ -7070,17 +7103,31 @@ ${'</'+'script>'}</body></html>`);
             }
         };
 
-        app.abrirArquivoMorto = (idx) => {
+        app.abrirArquivoMorto = async (idx) => {
             if(!idx) return;
 
-            const arquivo = _normalizarArchive(DB.get(STORAGE_KEYS.ARCHIVE));
-            // mesma ordem usada em carregarListaMorto (mais recente primeiro)
+            // HOTFIX 2026-06-3: usar cache in-memory como fonte primária
+            const fonte = (state._archiveCache && state._archiveCache.length)
+                ? state._archiveCache
+                : DB.get(STORAGE_KEYS.ARCHIVE);
+            const arquivo = _normalizarArchive(fonte);
             const ordenado = arquivo.slice().sort((a, b) => {
                 const da = new Date(b?.dataArquivamento || 0).getTime();
                 const db_ = new Date(a?.dataArquivamento || 0).getTime();
                 return da - db_;
             });
-            state.currentData = ordenado[parseInt(idx)];
+            let item = ordenado[parseInt(idx)];
+
+            // Se item veio SLIM (fallback localStorage por quota exceeded), buscar full do Firebase
+            if (item && item._slim && item._firebaseKey && typeof database !== 'undefined') {
+                try {
+                    const snap = await database.ref('archive/' + item._firebaseKey).once('value');
+                    if (snap.exists()) item = { ...snap.val(), _firebaseKey: item._firebaseKey };
+                } catch (e) {
+                    console.error('[abrirArquivoMorto] falha ao buscar full do Firebase', e);
+                }
+            }
+            state.currentData = item;
             state.isReadOnly = true;
             
             document.getElementById('detail-view').classList.remove('hidden');
