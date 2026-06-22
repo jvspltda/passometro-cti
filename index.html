@@ -7032,19 +7032,37 @@ ${'</'+'script>'}</body></html>`);
             }
         };
 
+        // HOTFIX 2026-06-2: defensivo contra cache antigo de localStorage que pode estar como OBJETO (push)
+        // após o fix de archive. carregarListaMorto e abrirArquivoMorto agora aceitam ambos formatos.
+        const _normalizarArchive = (raw) => {
+            if (!raw) return [];
+            if (Array.isArray(raw)) return raw.slice();   // cópia (não mutamos original)
+            if (typeof raw === 'object') {
+                return Object.entries(raw).map(([k, v]) => ({ ...v, _firebaseKey: k }));
+            }
+            return [];
+        };
+
         app.carregarListaMorto = () => {
             try {
                 const select = document.getElementById('arquivo-morto-select');
                 if (!select) {
                     return;
                 }
-                
-                const arquivo = DB.get(STORAGE_KEYS.ARCHIVE);
+
+                const arquivo = _normalizarArchive(DB.get(STORAGE_KEYS.ARCHIVE));
+                console.log('[carregarListaMorto] entries=', arquivo.length);
                 select.innerHTML = '<option value="">Buscar paciente...</option>';
-                
-                arquivo.reverse().forEach((item, idx) => {
-                    const nome = item.admissao?.nome || 'Sem nome';
-                    const data = item.dataArquivamento ? new Date(item.dataArquivamento).toLocaleDateString('pt-BR') : '';
+
+                // Mais recente primeiro: ordena por dataArquivamento desc (mais robusto que reverse)
+                const ordenado = arquivo.slice().sort((a, b) => {
+                    const da = new Date(b?.dataArquivamento || 0).getTime();
+                    const db_ = new Date(a?.dataArquivamento || 0).getTime();
+                    return da - db_;
+                });
+                ordenado.forEach((item, idx) => {
+                    const nome = item?.admissao?.nome || 'Sem nome';
+                    const data = item?.dataArquivamento ? new Date(item.dataArquivamento).toLocaleDateString('pt-BR') : '';
                     select.innerHTML += `<option value="${idx}">${nome} - ${data}</option>`;
                 });
             } catch (error) {
@@ -7054,10 +7072,15 @@ ${'</'+'script>'}</body></html>`);
 
         app.abrirArquivoMorto = (idx) => {
             if(!idx) return;
-            
-            const arquivo = DB.get(STORAGE_KEYS.ARCHIVE);
-            const reversed = arquivo.reverse();
-            state.currentData = reversed[parseInt(idx)];
+
+            const arquivo = _normalizarArchive(DB.get(STORAGE_KEYS.ARCHIVE));
+            // mesma ordem usada em carregarListaMorto (mais recente primeiro)
+            const ordenado = arquivo.slice().sort((a, b) => {
+                const da = new Date(b?.dataArquivamento || 0).getTime();
+                const db_ = new Date(a?.dataArquivamento || 0).getTime();
+                return da - db_;
+            });
+            state.currentData = ordenado[parseInt(idx)];
             state.isReadOnly = true;
             
             document.getElementById('detail-view').classList.remove('hidden');
