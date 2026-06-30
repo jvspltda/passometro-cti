@@ -1,9 +1,23 @@
 <!DOCTYPE html>
+<!--
+  ╔══════════════════════════════════════════════════════════════════╗
+  ║  PASSÔMETRO MÉDICO — CTI                                         ║
+  ║  Copyright © 2024-2026 JVSP LTDA. Todos os direitos reservados.  ║
+  ║                                                                  ║
+  ║  SOFTWARE PROPRIETÁRIO. Cópia, modificação, redistribuição ou    ║
+  ║  engenharia reversa são PROIBIDAS sem autorização escrita.       ║
+  ║  Lei 9.609/1998 · Lei 9.610/1998 · jvsp.ltda2@gmail.com          ║
+  ╚══════════════════════════════════════════════════════════════════╝
+-->
 <html lang="pt-BR">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PASSÔMETRO MÉDICO - CTI FHSVP</title>
+    <meta name="copyright" content="© 2024-2026 JVSP LTDA. Todos os direitos reservados.">
+    <meta name="author" content="JVSP LTDA">
+    <meta name="robots" content="noindex, nofollow, noarchive, nosnippet, noimageindex">
+    <meta name="googlebot" content="noindex, nofollow">
+    <title>PASSÔMETRO MÉDICO - CTI</title>
     
     <script src="https://cdn.tailwindcss.com"></script>
     
@@ -1207,7 +1221,7 @@
                 </svg>
             </div>
             <h3 class="text-2xl font-bold text-gray-900 mb-2 text-center">🏥 PASSÔMETRO MÉDICO</h3>
-            <p class="text-sm text-center text-blue-700 font-bold mb-4">CTI - Fundação Hospitalar São Vicente de Paulo</p>
+            <p class="text-sm text-center text-blue-700 font-bold mb-4">CTI</p>
             
             <div class="mb-3">
                 <label class="text-xs font-bold text-gray-700 block mb-2">SEU NOME:</label>
@@ -1369,7 +1383,7 @@
     <div id="grid-view" class="flex-grow p-6 max-w-7xl mx-auto w-full">
         <header class="mb-6 flex flex-col md:flex-row justify-between items-center gap-4 no-print">
             <div class="flex items-center gap-4">
-                <!-- Logo da Fundação Hospitalar -->
+                <!-- Logo -->
                 <div class="flex-shrink-0">
                     <svg width="80" height="80" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
                         <!-- Coração com cruz -->
@@ -1382,9 +1396,9 @@
                     </svg>
                 </div>
                 <div>
-                    <h1 class="text-3xl font-extrabold text-blue-900 tracking-tight">PASSÔMETRO MÉDICO - CTI FHSVP</h1>
+                    <h1 class="text-3xl font-extrabold text-blue-900 tracking-tight">PASSÔMETRO MÉDICO - CTI</h1>
                     <div class="text-sm font-bold text-blue-700 mt-1">
-                        Fundação Hospitalar São Vicente de Paulo
+                        &nbsp;
                     </div>
                     <div class="mt-2 flex items-center gap-3">
                         <div id="firebase-status" class="inline-flex items-center text-xs font-bold">
@@ -2102,7 +2116,7 @@ GASOMETRIA ARTERIAL:
             <!-- TAB PASSOGRAMA EXAMES -->
             <div id="view-passograma" class="tab-content">
                 <div class="flex justify-between items-center mb-4 no-print">
-                    <h3 class="text-lg font-bold text-gray-800">🔬 PASSOGRAMA EXAMES CTI FHSVP</h3>
+                    <h3 class="text-lg font-bold text-gray-800">🔬 PASSOGRAMA EXAMES CTI</h3>
                     <div class="flex gap-2">
                         <button onclick="app.atualizarPassograma()" class="bg-blue-600 text-white px-3 py-1.5 text-sm font-bold rounded hover:bg-blue-700 transition">🔄 Atualizar</button>
                         <button onclick="app.imprimirPassograma()" class="bg-gray-600 text-white px-3 py-1.5 text-sm font-bold rounded hover:bg-gray-700 transition">🖨️ Imprimir</button>
@@ -3001,6 +3015,51 @@ GASOMETRIA ARTERIAL:
     </template>
 
     <script>
+        /*!
+         * PASSÔMETRO MÉDICO — CTI
+         * Copyright © 2024-2026 JVSP LTDA. Todos os direitos reservados.
+         *
+         * SOFTWARE PROPRIETÁRIO E CONFIDENCIAL.
+         * Uso, cópia, modificação, distribuição, engenharia reversa ou
+         * publicação deste código-fonte, no todo ou em parte, são EXPRESSAMENTE
+         * PROIBIDOS sem autorização escrita prévia do titular.
+         *
+         * Lei nº 9.609/1998 (Software) · Lei nº 9.610/1998 (Direitos Autorais)
+         * Contato: jvsp.ltda2@gmail.com
+         */
+        // ============================================
+        // 0. DOMAIN LOCK + COPYRIGHT GUARD
+        // ============================================
+        (function _domainLock() {
+            try {
+                const host = (location.hostname || '').toLowerCase();
+                const ALLOWED = [
+                    'passometro-cti-fhsvp.vercel.app',
+                    'localhost',
+                    '127.0.0.1',
+                    '0.0.0.0',
+                ];
+                const isFile = location.protocol === 'file:';
+                const ok = !isFile && ALLOWED.some(d => host === d || host.endsWith('.' + d));
+                // Permitir previews Vercel (subdomínios *.vercel.app do próprio projeto)
+                const isVercelPreview = host.endsWith('.vercel.app') && host.includes('passometro');
+                if (!ok && !isVercelPreview) {
+                    document.documentElement.innerHTML = '<div style="font:600 16px/1.5 system-ui;padding:48px;max-width:640px;margin:80px auto;text-align:center;color:#1e293b"><h1 style="font-size:22px;color:#dc2626;margin-bottom:16px">⚠ Cópia não autorizada</h1><p>Este software é proprietário e licenciado apenas para domínios autorizados.</p><p style="margin-top:16px;font-size:13px;color:#64748b">Origem detectada: <code>' + host + '</code></p><p style="margin-top:24px;font-size:13px;color:#64748b">© JVSP LTDA · Lei 9.609/98 · Contato: jvsp.ltda2@gmail.com</p></div>';
+                    throw new Error('Domain not authorized: ' + host);
+                }
+            } catch (e) {
+                // Re-throw para impedir execução em domínio não autorizado
+                if (String(e?.message || '').startsWith('Domain not authorized')) throw e;
+            }
+        })();
+        // Console banner (afasta curioso amador)
+        try {
+            const _cssWarn = 'color:#dc2626;font-size:18px;font-weight:800';
+            const _cssNote = 'color:#475569;font-size:13px';
+            console.log('%c⚠ PARE!', _cssWarn);
+            console.log('%cEste é um software proprietário (© JVSP LTDA). Colar código aqui pode comprometer a segurança dos dados clínicos e configurar violação da Lei 9.609/98.', _cssNote);
+        } catch (_) {}
+
         // ============================================
         // 1. INICIALIZAÇÃO BÁSICA
         // ============================================
@@ -3111,7 +3170,7 @@ GASOMETRIA ARTERIAL:
                 }
                 
                 // CONFIGURAÇÃO PADRÃO DO FIREBASE
-                // Projeto: passometro-ctifhsvp
+                // Backend RTDB
                 const defaultConfig = {
                     apiKey: "AIzaSyADASSamGzoK8yzyaULWFornvcVuqInYr4",
                     authDomain: "passometro-ctifhsvp.firebaseapp.com",
@@ -7447,7 +7506,7 @@ ${'</'+'script>'}</body></html>`);
         // PASSOGRAMA EXAMES - GRADE DE ACOMPANHAMENTO
         // ============================================
         
-        // Definição das linhas do passograma (mesmo layout do PDF FHSVP)
+        // Definição das linhas do passograma
         const PASSOGRAMA_ROWS = [
             { section: 'HEMOGRAMA' },
             { key: 'HB', label: 'HB', unit: 'g/dL', aliases: ['HB','HEMOGLOBINA'], refLow: 12, refHigh: 17 },
@@ -7966,7 +8025,7 @@ ${'</'+'script>'}</body></html>`);
     @media print { #wrap { width: auto; } }
 </style>
 </head><body>
-<div class="hdr">${nome} | LEITO: ${box} | PASSOGRAMA CTI FHSVP</div>
+<div class="hdr">${nome} | LEITO: ${box} | PASSOGRAMA CTI</div>
 <div id="wrap">${clone.outerHTML}</div>
 <script>
 (function(){
@@ -8171,7 +8230,7 @@ ${'</'+'script>'}
             };
             
             const turnoLabel = turno === 'diurno' ? 'PLANTÃO DIURNO' : 'PLANTÃO NOTURNO';
-            let texto = `CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - ${turnoLabel}\n\n`;
+            let texto = `CTI -${turnoLabel}\n\n`;
             
             texto += campo('HISTÓRIA CLÍNICA ATUAL', admissao.historia_clinica);
             texto += campo('COMORBIDADES', admissao.comorbidades);
@@ -8338,7 +8397,7 @@ ${'</'+'script>'}
             
             const turnoLabel = turno === 'diurno' ? 'PLANTÃO DIURNO' : 'PLANTÃO NOTURNO';
             let texto = '';
-            texto += `CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - ${turnoLabel}\n\n`;
+            texto += `CTI -${turnoLabel}\n\n`;
             
             texto += sec('HISTÓRIA CLÍNICA ATUAL', admissao.historia_clinica);
             texto += sec('COMORBIDADES', admissao.comorbidades);
@@ -8771,7 +8830,7 @@ ${'</'+'script>'}
                 return p.length === 3 ? `${p[2]}/${p[1]}/${p[0]}` : d;
             };
             
-            let sumario = 'CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE ALTA\n\n';
+            let sumario = 'CTI -SUMÁRIO DE ALTA\n\n';
             
             // ═══ IDENTIFICAÇÃO ═══
             let ident = `${dados.nome}, ${dados.idade} anos`;
@@ -8895,7 +8954,7 @@ REGRAS ABSOLUTAS:
 3. Mantenha TODOS os exames, valores e datas EXATAMENTE como estão
 4. Mantenha a estrutura de seções com títulos
 5. OMITA seções vazias
-6. Mantenha o cabeçalho FHSVP, DRG e orientações intactos
+6. Mantenha o cabeçalho, DRG e orientações intactos
 7. Máximo 2000 palavras`;
                     
                     const otimizado = await app.chamarIA(iaPrompt, `Reorganize:\n\n${sumario}`, 4000);
@@ -8960,7 +9019,7 @@ REGRAS ABSOLUTAS:
                     return val ? `${t}\n${val}\n\n` : '';
                 };
                 
-                let textoBase = 'CTI - FUNDAÇÃO HOSPITALAR SÃO VICENTE DE PAULO - SUMÁRIO DE TRANSFERÊNCIA\n\n';
+                let textoBase = 'CTI -SUMÁRIO DE TRANSFERÊNCIA\n\n';
                 
                 textoBase += `LOCAL DE DESTINO: ${destino}\n`;
                 textoBase += `MOTIVO DA TRANSFERÊNCIA: ${motivo}\n\n`;
